@@ -33,7 +33,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $redirectTo = $request->user()->is_admin
+            ? route('admin.resources', absolute: false)
+            : route('resources.index', absolute: false);
+
+        return redirect()->intended($redirectTo);
     }
 
     /**
@@ -47,7 +51,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        // CHANGE THIS LINE: Redirect specifically to the login route
         return redirect()->route('login');
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Folder extends Model
 {
-    protected $fillable = ['name', 'parent_id'];
+    protected $fillable = ['name', 'parent_id', 'is_locked', 'description'];
 
     // A folder has many files
     public function files(): HasMany
@@ -32,5 +32,10 @@ class Folder extends Model
     public function childrenRecursive(): HasMany
     {
         return $this->subfolders()->with(['childrenRecursive', 'files']);
+    }
+
+    public function resourceTrackings(): HasMany
+    {
+        return $this->hasMany(ResourceTracking::class);
     }
 }

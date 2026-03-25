@@ -24,6 +24,9 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'is_admin' => (bool) $request->user()->is_admin,
+                    'role' => $request->user()->role,
+                    'district' => $request->user()->district,
+                    'school_name' => $request->user()->school_name,
                 ] : null,
             ],
             // Add flash messages so you can see success/error notifications

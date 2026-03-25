@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -14,7 +15,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin', // Ensure this is fillable
+        'is_admin',
+        'role',
+        'district',
+        'school_name',
     ];
 
     protected $hidden = [
@@ -27,7 +31,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean', // This makes the if($user->is_admin) check reliable
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function resourceTrackings(): HasMany
+    {
+        return $this->hasMany(ResourceTracking::class);
     }
 }
