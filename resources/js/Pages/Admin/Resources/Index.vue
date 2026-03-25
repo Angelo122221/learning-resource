@@ -224,9 +224,9 @@ const toggleLock = (type, id) => {
                     <Link href="/admin/users" class="bg-emerald-600 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md">
                         Users
                     </Link>
-                    <Link href="/admin/analytics" class="bg-slate-900 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md">
+                    <a href="/admin/analytics" class="bg-slate-900 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md">
                         Analytics
-                    </Link>
+                    </a>
                     <Link href="/logout" method="post" as="button" class="bg-slate-200 text-slate-600 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm">
                         Log Out
                     </Link>

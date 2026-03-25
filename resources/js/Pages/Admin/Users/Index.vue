@@ -126,9 +126,9 @@ const deleteUser = (userId) => {
                     <Link href="/admin/resources" class="bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
                         Resources
                     </Link>
-                    <Link href="/admin/analytics" class="bg-slate-900 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all">
+                    <a href="/admin/analytics" class="bg-slate-900 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all">
                         Analytics
-                    </Link>
+                    </a>
                     <Link href="/logout" method="post" as="button" class="bg-red-100 text-red-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
                         Log Out
                     </Link>

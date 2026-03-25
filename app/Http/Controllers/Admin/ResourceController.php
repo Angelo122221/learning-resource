@@ -13,7 +13,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -333,119 +336,183 @@ class ResourceController extends Controller
 
     public function analytics(): Response
     {
-        $totalDownloads = ResourceTracking::where('action', 'file_downloaded')->count();
-        $totalFileOpens = ResourceTracking::where('action', 'file_opened')->count();
-        $totalFolderOpens = ResourceTracking::where('action', 'folder_opened')->count();
-        $activeUsers = ResourceTracking::query()->distinct('user_id')->count('user_id');
-
-        $storageUsedBytes = ResourceFile::query()
-            ->pluck('file_path')
-            ->sum(fn ($path) => $path && Storage::disk('public')->exists($path)
-                ? Storage::disk('public')->size($path)
-                : 0);
-
-        $districtExpr = "COALESCE(NULLIF(users.district, ''), 'Unknown District')";
-        $schoolExpr = "COALESCE(NULLIF(users.school_name, ''), 'Unknown School')";
-
-        $districtStats = ResourceTracking::query()
-            ->join('users', 'users.id', '=', 'resource_trackings.user_id')
-            ->selectRaw("{$districtExpr} as district")
-            ->selectRaw('COUNT(*) as total_actions')
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'folder_opened' THEN 1 ELSE 0 END) as folders_opened")
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_opened' THEN 1 ELSE 0 END) as files_opened")
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_downloaded' THEN 1 ELSE 0 END) as files_downloaded")
-            ->groupBy(DB::raw($districtExpr))
-            ->orderByDesc('total_actions')
-            ->get();
-
-        $schoolStats = ResourceTracking::query()
-            ->join('users', 'users.id', '=', 'resource_trackings.user_id')
-            ->selectRaw("{$districtExpr} as district")
-            ->selectRaw("{$schoolExpr} as school_name")
-            ->selectRaw('COUNT(*) as total_actions')
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'folder_opened' THEN 1 ELSE 0 END) as folders_opened")
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_opened' THEN 1 ELSE 0 END) as files_opened")
-            ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_downloaded' THEN 1 ELSE 0 END) as files_downloaded")
-            ->groupBy(DB::raw($districtExpr), DB::raw($schoolExpr))
-            ->orderByDesc('total_actions')
-            ->get();
-
-        $topFolders = ResourceTracking::query()
-            ->where('action', 'folder_opened')
-            ->whereNotNull('folder_id')
-            ->select('folder_id')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('folder_id')
-            ->orderByDesc('total')
-            ->with('folder:id,name')
-            ->limit(10)
-            ->get()
-            ->map(fn ($row) => [
-                'folder_name' => $row->folder?->name ?? 'Unknown Folder',
-                'total' => (int) $row->total,
-            ]);
-
-        $topFiles = ResourceTracking::query()
-            ->whereIn('action', ['file_opened', 'file_downloaded'])
-            ->whereNotNull('resource_file_id')
-            ->select('resource_file_id')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('resource_file_id')
-            ->orderByDesc('total')
-            ->with('file:id,title')
-            ->limit(10)
-            ->get()
-            ->map(fn ($row) => [
-                'file_title' => $row->file?->title ?? 'Unknown File',
-                'total' => (int) $row->total,
-            ]);
-
-        $recentActivity = ResourceTracking::query()
-            ->with([
-                'user:id,name,email,district,school_name',
-                'folder:id,name',
-                'file:id,title',
-            ])
-            ->latest()
-            ->limit(50)
-            ->get()
-            ->map(function (ResourceTracking $tracking) {
-                return [
-                    'id' => $tracking->id,
-                    'action' => $this->readableAction($tracking->action),
-                    'district' => $tracking->user?->district ?: 'Unknown District',
-                    'school_name' => $tracking->user?->school_name ?: 'Unknown School',
-                    'user_name' => $tracking->user?->name ?: 'Unknown User',
-                    'user_email' => $tracking->user?->email ?: 'N/A',
-                    'target' => $tracking->folder?->name
-                        ?? $tracking->file?->title
-                        ?? 'N/A',
-                    'time' => $tracking->created_at?->toDateTimeString(),
-                ];
-            });
-
-        $usersByRole = User::query()
-            ->select('role')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('role')
-            ->orderByDesc('total')
-            ->get();
-
-        return Inertia::render('Admin/Resources/Analytics', [
+        $emptyAnalyticsPayload = [
             'stats' => [
-                'total_downloads' => $totalDownloads,
-                'total_file_opens' => $totalFileOpens,
-                'total_folder_opens' => $totalFolderOpens,
-                'active_users' => $activeUsers,
-                'storage_used' => round($storageUsedBytes / (1024 * 1024), 2).' MB',
+                'total_downloads' => 0,
+                'total_file_opens' => 0,
+                'total_folder_opens' => 0,
+                'active_users' => 0,
+                'storage_used' => '0 MB',
             ],
-            'districtStats' => $districtStats,
-            'schoolStats' => $schoolStats,
-            'topFolders' => $topFolders,
-            'topFiles' => $topFiles,
-            'recentActivity' => $recentActivity,
-            'usersByRole' => $usersByRole,
-        ]);
+            'districtStats' => [],
+            'schoolStats' => [],
+            'topFolders' => [],
+            'topFiles' => [],
+            'recentActivity' => [],
+            'usersByRole' => [],
+            'loadError' => null,
+        ];
+
+        if (
+            ! Schema::hasTable('resource_trackings') ||
+            ! Schema::hasTable('users') ||
+            ! Schema::hasTable('resource_files')
+        ) {
+            return Inertia::render('Admin/Resources/Analytics', $emptyAnalyticsPayload);
+        }
+
+        $hasRoleColumn = Schema::hasColumn('users', 'role');
+        $hasDistrictColumn = Schema::hasColumn('users', 'district');
+        $hasSchoolColumn = Schema::hasColumn('users', 'school_name');
+
+        try {
+            $totalDownloads = ResourceTracking::where('action', 'file_downloaded')->count();
+            $totalFileOpens = ResourceTracking::where('action', 'file_opened')->count();
+            $totalFolderOpens = ResourceTracking::where('action', 'folder_opened')->count();
+            $activeUsers = ResourceTracking::query()->distinct('user_id')->count('user_id');
+
+            $storageUsedBytes = ResourceFile::query()
+                ->pluck('file_path')
+                ->sum(fn ($path) => $path && Storage::disk('public')->exists($path)
+                    ? Storage::disk('public')->size($path)
+                    : 0);
+
+            $districtExpr = $hasDistrictColumn
+                ? "COALESCE(NULLIF(users.district, ''), 'Unknown District')"
+                : "'Unknown District'";
+            $schoolExpr = $hasSchoolColumn
+                ? "COALESCE(NULLIF(users.school_name, ''), 'Unknown School')"
+                : "'Unknown School'";
+
+            $districtStats = ResourceTracking::query()
+                ->leftJoin('users', 'users.id', '=', 'resource_trackings.user_id')
+                ->selectRaw("{$districtExpr} as district")
+                ->selectRaw('COUNT(*) as total_actions')
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'folder_opened' THEN 1 ELSE 0 END) as folders_opened")
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_opened' THEN 1 ELSE 0 END) as files_opened")
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_downloaded' THEN 1 ELSE 0 END) as files_downloaded")
+                ->groupBy(DB::raw($districtExpr))
+                ->orderByDesc('total_actions')
+                ->get();
+
+            $schoolStats = ResourceTracking::query()
+                ->leftJoin('users', 'users.id', '=', 'resource_trackings.user_id')
+                ->selectRaw("{$districtExpr} as district")
+                ->selectRaw("{$schoolExpr} as school_name")
+                ->selectRaw('COUNT(*) as total_actions')
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'folder_opened' THEN 1 ELSE 0 END) as folders_opened")
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_opened' THEN 1 ELSE 0 END) as files_opened")
+                ->selectRaw("SUM(CASE WHEN resource_trackings.action = 'file_downloaded' THEN 1 ELSE 0 END) as files_downloaded")
+                ->groupBy(DB::raw($districtExpr), DB::raw($schoolExpr))
+                ->orderByDesc('total_actions')
+                ->get();
+
+            $topFolders = ResourceTracking::query()
+                ->where('action', 'folder_opened')
+                ->whereNotNull('folder_id')
+                ->select('folder_id')
+                ->selectRaw('COUNT(*) as total')
+                ->groupBy('folder_id')
+                ->orderByDesc('total')
+                ->with('folder:id,name')
+                ->limit(10)
+                ->get()
+                ->map(fn ($row) => [
+                    'folder_name' => $row->folder?->name ?? 'Unknown Folder',
+                    'total' => (int) $row->total,
+                ]);
+
+            $topFiles = ResourceTracking::query()
+                ->whereIn('action', ['file_opened', 'file_downloaded'])
+                ->whereNotNull('resource_file_id')
+                ->select('resource_file_id')
+                ->selectRaw('COUNT(*) as total')
+                ->groupBy('resource_file_id')
+                ->orderByDesc('total')
+                ->with('file:id,title')
+                ->limit(10)
+                ->get()
+                ->map(fn ($row) => [
+                    'file_title' => $row->file?->title ?? 'Unknown File',
+                    'total' => (int) $row->total,
+                ]);
+
+            $userSelectColumns = ['id', 'name', 'email'];
+            if ($hasDistrictColumn) {
+                $userSelectColumns[] = 'district';
+            }
+            if ($hasSchoolColumn) {
+                $userSelectColumns[] = 'school_name';
+            }
+
+            $recentActivity = ResourceTracking::query()
+                ->with([
+                    'user:'.implode(',', $userSelectColumns),
+                    'folder:id,name',
+                    'file:id,title',
+                ])
+                ->latest()
+                ->limit(50)
+                ->get()
+                ->map(function (ResourceTracking $tracking) use ($hasDistrictColumn, $hasSchoolColumn) {
+                    return [
+                        'id' => $tracking->id,
+                        'action' => $this->readableAction($tracking->action),
+                        'district' => $hasDistrictColumn
+                            ? ($tracking->user?->district ?: 'Unknown District')
+                            : 'Unknown District',
+                        'school_name' => $hasSchoolColumn
+                            ? ($tracking->user?->school_name ?: 'Unknown School')
+                            : 'Unknown School',
+                        'user_name' => $tracking->user?->name ?: 'Unknown User',
+                        'user_email' => $tracking->user?->email ?: 'N/A',
+                        'target' => $tracking->folder?->name
+                            ?? $tracking->file?->title
+                            ?? 'N/A',
+                        'time' => $tracking->created_at?->toDateTimeString(),
+                    ];
+                });
+
+            $usersByRole = $hasRoleColumn
+                ? User::query()
+                    ->selectRaw("COALESCE(NULLIF(role, ''), CASE WHEN is_admin = 1 THEN 'admin' ELSE 'user' END) as role")
+                    ->selectRaw('COUNT(*) as total')
+                    ->groupBy('role')
+                    ->orderByDesc('total')
+                    ->get()
+                : User::query()
+                    ->selectRaw("CASE WHEN is_admin = 1 THEN 'admin' ELSE 'user' END as role")
+                    ->selectRaw('COUNT(*) as total')
+                    ->groupBy('role')
+                    ->orderByDesc('total')
+                    ->get();
+
+            return Inertia::render('Admin/Resources/Analytics', [
+                'stats' => [
+                    'total_downloads' => $totalDownloads,
+                    'total_file_opens' => $totalFileOpens,
+                    'total_folder_opens' => $totalFolderOpens,
+                    'active_users' => $activeUsers,
+                    'storage_used' => round($storageUsedBytes / (1024 * 1024), 2).' MB',
+                ],
+                'districtStats' => $districtStats,
+                'schoolStats' => $schoolStats,
+                'topFolders' => $topFolders,
+                'topFiles' => $topFiles,
+                'recentActivity' => $recentActivity,
+                'usersByRole' => $usersByRole,
+                'loadError' => null,
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Failed to load analytics dashboard.', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $emptyAnalyticsPayload['loadError'] = 'Analytics data could not be fully loaded. Please check tracking tables/migrations.';
+
+            return Inertia::render('Admin/Resources/Analytics', $emptyAnalyticsPayload);
+        }
     }
 
     private function allFoldersWithPath()

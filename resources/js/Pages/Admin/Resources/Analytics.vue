@@ -9,6 +9,7 @@ defineProps({
     topFiles: Array,
     recentActivity: Array,
     usersByRole: Array,
+    loadError: String,
 });
 </script>
 
@@ -27,12 +28,12 @@ defineProps({
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <Link href="/admin/resources" class="bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
+                    <a href="/admin/resources" class="bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
                         Resources
-                    </Link>
-                    <Link href="/admin/users" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all">
+                    </a>
+                    <a href="/admin/users" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all">
                         Users
-                    </Link>
+                    </a>
                     <Link href="/logout" method="post" as="button" class="bg-red-100 text-red-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
                         Log Out
                     </Link>
@@ -40,6 +41,9 @@ defineProps({
             </header>
 
             <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+                <article v-if="loadError" class="md:col-span-2 xl:col-span-5 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+                    <p class="text-sm font-semibold text-amber-800">{{ loadError }}</p>
+                </article>
                 <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
                     <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">Downloads</p>
                     <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.total_downloads }}</p>
@@ -84,6 +88,9 @@ defineProps({
                                     <td class="py-2">{{ row.files_opened }}</td>
                                     <td class="py-2">{{ row.files_downloaded }}</td>
                                 </tr>
+                                <tr v-if="districtStats.length === 0">
+                                    <td colspan="5" class="py-6 text-center text-slate-400 font-semibold">No district activity yet.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -112,6 +119,9 @@ defineProps({
                                     <td class="py-2">{{ row.files_opened }}</td>
                                     <td class="py-2">{{ row.files_downloaded }}</td>
                                 </tr>
+                                <tr v-if="schoolStats.length === 0">
+                                    <td colspan="6" class="py-6 text-center text-slate-400 font-semibold">No school activity yet.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -124,6 +134,7 @@ defineProps({
                             <p class="font-semibold text-sm truncate">{{ row.folder_name }}</p>
                             <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
                         </div>
+                        <p v-if="topFolders.length === 0" class="text-sm text-slate-400 font-semibold">No folder openings tracked yet.</p>
                     </div>
                 </article>
 
@@ -134,6 +145,7 @@ defineProps({
                             <p class="font-semibold text-sm truncate">{{ row.file_title }}</p>
                             <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
                         </div>
+                        <p v-if="topFiles.length === 0" class="text-sm text-slate-400 font-semibold">No file interactions tracked yet.</p>
                     </div>
                 </article>
 
@@ -144,6 +156,7 @@ defineProps({
                             <p class="font-semibold text-sm uppercase">{{ row.role }}</p>
                             <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
                         </div>
+                        <p v-if="usersByRole.length === 0" class="text-sm text-slate-400 font-semibold">No users found.</p>
                     </div>
                 </article>
 
@@ -169,6 +182,9 @@ defineProps({
                                     <td class="py-2">{{ row.district }}</td>
                                     <td class="py-2">{{ row.school_name }}</td>
                                     <td class="py-2">{{ row.target }}</td>
+                                </tr>
+                                <tr v-if="recentActivity.length === 0">
+                                    <td colspan="6" class="py-6 text-center text-slate-400 font-semibold">No tracked activity yet.</td>
                                 </tr>
                             </tbody>
                         </table>

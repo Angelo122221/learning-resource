@@ -6,6 +6,7 @@ use App\Models\CarouselImage;
 use App\Models\FeaturedVideo;
 use App\Models\Folder;
 use App\Models\ResourceFile;
+use App\Models\ResourceTracking;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -188,5 +189,60 @@ class AdminManagementTest extends TestCase
             'folder_id' => $folder->id,
             'action' => 'folder_opened',
         ]);
+    }
+
+    public function test_analytics_page_displays_tracked_district_and_school_data(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+            'role' => 'admin',
+        ]);
+
+        $teacher = User::factory()->create([
+            'role' => 'teacher',
+            'district' => 'North District',
+            'school_name' => 'North National High School',
+        ]);
+
+        $folder = Folder::create([
+            'name' => 'Math',
+            'parent_id' => null,
+        ]);
+
+        $file = ResourceFile::create([
+            'folder_id' => $folder->id,
+            'title' => 'Algebra Basics',
+            'file_path' => 'resources/algebra.pdf',
+            'file_type' => 'pdf',
+            'is_locked' => false,
+        ]);
+
+        ResourceTracking::create([
+            'user_id' => $teacher->id,
+            'folder_id' => $folder->id,
+            'resource_file_id' => null,
+            'action' => 'folder_opened',
+        ]);
+
+        ResourceTracking::create([
+            'user_id' => $teacher->id,
+            'folder_id' => $folder->id,
+            'resource_file_id' => $file->id,
+            'action' => 'file_opened',
+        ]);
+
+        ResourceTracking::create([
+            'user_id' => $teacher->id,
+            'folder_id' => $folder->id,
+            'resource_file_id' => $file->id,
+            'action' => 'file_downloaded',
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/admin/analytics')
+            ->assertOk()
+            ->assertSee('North District')
+            ->assertSee('North National High School')
+            ->assertSee('Algebra Basics');
     }
 }

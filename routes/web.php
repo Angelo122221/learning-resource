@@ -49,6 +49,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Main Explorer View & New Analytics Dashboard
         Route::get('/resources', [AdminResourceController::class, 'index'])->name('admin.resources');
         Route::get('/analytics', [AdminResourceController::class, 'analytics'])->name('admin.analytics'); // NEW!
+        Route::get('/resources/analytics', [AdminResourceController::class, 'analytics'])->name('admin.resources.analytics');
+        Route::delete('/resources', function () {
+            return redirect()->route('admin.analytics');
+        });
         Route::get('/users', [AdminResourceController::class, 'users'])->name('admin.users');
         
         // Folder Management
