@@ -473,19 +473,25 @@ class ResourceController extends Controller
                     ];
                 });
 
-            $usersByRole = $hasRoleColumn
-                ? User::query()
-                    ->selectRaw("COALESCE(NULLIF(role, ''), CASE WHEN is_admin = 1 THEN 'admin' ELSE 'user' END) as role")
-                    ->selectRaw('COUNT(*) as total')
-                    ->groupBy('role')
-                    ->orderByDesc('total')
-                    ->get()
-                : User::query()
-                    ->selectRaw("CASE WHEN is_admin = 1 THEN 'admin' ELSE 'user' END as role")
-                    ->selectRaw('COUNT(*) as total')
-                    ->groupBy('role')
-                    ->orderByDesc('total')
-                    ->get();
+            $usersByRole = User::query()
+                ->select(['role', 'is_admin'])
+                ->get()
+                ->map(function (User $user) use ($hasRoleColumn) {
+                    $role = $hasRoleColumn ? strtolower(trim((string) $user->role)) : '';
+
+                    if ($role === '') {
+                        $role = $user->is_admin ? 'admin' : 'user';
+                    }
+
+                    return $role;
+                })
+                ->countBy()
+                ->map(fn ($total, $role) => [
+                    'role' => $role,
+                    'total' => (int) $total,
+                ])
+                ->sortByDesc('total')
+                ->values();
 
             return Inertia::render('Admin/Resources/Analytics', [
                 'stats' => [
