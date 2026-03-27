@@ -1,5 +1,11 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import AppDataTable from '@/Components/AppDataTable.vue';
+import AppEmptyState from '@/Components/AppEmptyState.vue';
+import AppPageHeader from '@/Components/AppPageHeader.vue';
+import AppSectionCard from '@/Components/AppSectionCard.vue';
+import AppStatCard from '@/Components/AppStatCard.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { Head } from '@inertiajs/vue3';
 
 defineProps({
     stats: Object,
@@ -11,186 +17,140 @@ defineProps({
     usersByRole: Array,
     loadError: String,
 });
+
+const districtHeaders = [
+    { key: 'district', label: 'District' },
+    { key: 'total', label: 'Total' },
+    { key: 'folder_opens', label: 'Folder Opens' },
+    { key: 'file_opens', label: 'File Opens' },
+    { key: 'downloads', label: 'Downloads' },
+];
+
+const schoolHeaders = [
+    { key: 'district', label: 'District' },
+    { key: 'school', label: 'School' },
+    { key: 'total', label: 'Total' },
+    { key: 'folder_opens', label: 'Folder Opens' },
+    { key: 'file_opens', label: 'File Opens' },
+    { key: 'downloads', label: 'Downloads' },
+];
+
+const activityHeaders = [
+    { key: 'time', label: 'Time' },
+    { key: 'action', label: 'Action' },
+    { key: 'user', label: 'User' },
+    { key: 'district', label: 'District' },
+    { key: 'school', label: 'School' },
+    { key: 'target', label: 'Target' },
+];
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#f3f6f9] p-6 md:p-10 text-slate-900">
-        <div class="max-w-[1800px] mx-auto">
-            <header class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-8 pb-6 border-b-4 border-slate-200">
-                <div class="flex items-center gap-5">
-                    <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg">AN</div>
-                    <div>
-                        <h1 class="text-3xl md:text-4xl font-black italic tracking-tighter uppercase leading-none">
-                            Analytics <span class="text-blue-600">Dashboard</span>
-                        </h1>
-                        <p class="text-xs md:text-sm font-black text-slate-400 uppercase tracking-[0.3em] mt-2">District and School Tracking</p>
-                    </div>
-                </div>
+    <Head title="Analytics" />
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <a href="/admin/resources" class="bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
-                        Resources
-                    </a>
-                    <a href="/admin/users" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all">
-                        Users
-                    </a>
-                    <Link href="/logout" method="post" as="button" class="bg-red-100 text-red-700 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
-                        Log Out
-                    </Link>
-                </div>
-            </header>
+    <AdminLayout>
+        <AppPageHeader
+            badge="AN"
+            title="Analytics"
+            accent="Dashboard"
+            subtitle="Monitor resource usage across districts, schools, and account roles."
+        />
 
-            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-                <article v-if="loadError" class="md:col-span-2 xl:col-span-5 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
-                    <p class="text-sm font-semibold text-amber-800">{{ loadError }}</p>
-                </article>
-                <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">Downloads</p>
-                    <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.total_downloads }}</p>
-                </article>
-                <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">File Opens</p>
-                    <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.total_file_opens }}</p>
-                </article>
-                <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">Folder Opens</p>
-                    <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.total_folder_opens }}</p>
-                </article>
-                <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">Active Users</p>
-                    <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.active_users }}</p>
-                </article>
-                <article class="bg-white border-2 border-slate-100 rounded-2xl p-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">Storage Used</p>
-                    <p class="text-3xl font-black text-blue-600 mt-2">{{ stats.storage_used }}</p>
-                </article>
-            </section>
-
-            <section class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                <article class="xl:col-span-6 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">By District</h2>
-                    <div class="overflow-auto">
-                        <table class="w-full min-w-[620px] text-sm">
-                            <thead>
-                                <tr class="text-left text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-100">
-                                    <th class="py-2">District</th>
-                                    <th class="py-2">Total</th>
-                                    <th class="py-2">Folder Opens</th>
-                                    <th class="py-2">File Opens</th>
-                                    <th class="py-2">Downloads</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="row in districtStats" :key="row.district" class="border-b border-slate-50">
-                                    <td class="py-2 font-bold">{{ row.district }}</td>
-                                    <td class="py-2">{{ row.total_actions }}</td>
-                                    <td class="py-2">{{ row.folders_opened }}</td>
-                                    <td class="py-2">{{ row.files_opened }}</td>
-                                    <td class="py-2">{{ row.files_downloaded }}</td>
-                                </tr>
-                                <tr v-if="districtStats.length === 0">
-                                    <td colspan="5" class="py-6 text-center text-slate-400 font-semibold">No district activity yet.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-
-                <article class="xl:col-span-6 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">By School</h2>
-                    <div class="overflow-auto">
-                        <table class="w-full min-w-[700px] text-sm">
-                            <thead>
-                                <tr class="text-left text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-100">
-                                    <th class="py-2">District</th>
-                                    <th class="py-2">School</th>
-                                    <th class="py-2">Total</th>
-                                    <th class="py-2">Folder Opens</th>
-                                    <th class="py-2">File Opens</th>
-                                    <th class="py-2">Downloads</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="row in schoolStats" :key="`${row.district}-${row.school_name}`" class="border-b border-slate-50">
-                                    <td class="py-2 font-bold">{{ row.district }}</td>
-                                    <td class="py-2">{{ row.school_name }}</td>
-                                    <td class="py-2">{{ row.total_actions }}</td>
-                                    <td class="py-2">{{ row.folders_opened }}</td>
-                                    <td class="py-2">{{ row.files_opened }}</td>
-                                    <td class="py-2">{{ row.files_downloaded }}</td>
-                                </tr>
-                                <tr v-if="schoolStats.length === 0">
-                                    <td colspan="6" class="py-6 text-center text-slate-400 font-semibold">No school activity yet.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-
-                <article class="xl:col-span-4 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Most Opened Folders</h2>
-                    <div class="space-y-2">
-                        <div v-for="row in topFolders" :key="row.folder_name" class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-                            <p class="font-semibold text-sm truncate">{{ row.folder_name }}</p>
-                            <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
-                        </div>
-                        <p v-if="topFolders.length === 0" class="text-sm text-slate-400 font-semibold">No folder openings tracked yet.</p>
-                    </div>
-                </article>
-
-                <article class="xl:col-span-4 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Most Opened/Downloaded Files</h2>
-                    <div class="space-y-2">
-                        <div v-for="row in topFiles" :key="row.file_title" class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-                            <p class="font-semibold text-sm truncate">{{ row.file_title }}</p>
-                            <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
-                        </div>
-                        <p v-if="topFiles.length === 0" class="text-sm text-slate-400 font-semibold">No file interactions tracked yet.</p>
-                    </div>
-                </article>
-
-                <article class="xl:col-span-4 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">User Roles</h2>
-                    <div class="space-y-2">
-                        <div v-for="row in usersByRole" :key="row.role" class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-                            <p class="font-semibold text-sm uppercase">{{ row.role }}</p>
-                            <p class="text-xs font-black text-slate-500">{{ row.total }}</p>
-                        </div>
-                        <p v-if="usersByRole.length === 0" class="text-sm text-slate-400 font-semibold">No users found.</p>
-                    </div>
-                </article>
-
-                <article class="xl:col-span-12 bg-white border-2 border-slate-100 rounded-2xl p-5">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Recent Activity</h2>
-                    <div class="overflow-auto">
-                        <table class="w-full min-w-[1000px] text-sm">
-                            <thead>
-                                <tr class="text-left text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-100">
-                                    <th class="py-2">Time</th>
-                                    <th class="py-2">Action</th>
-                                    <th class="py-2">User</th>
-                                    <th class="py-2">District</th>
-                                    <th class="py-2">School</th>
-                                    <th class="py-2">Target</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="row in recentActivity" :key="row.id" class="border-b border-slate-50">
-                                    <td class="py-2">{{ row.time }}</td>
-                                    <td class="py-2 font-bold">{{ row.action }}</td>
-                                    <td class="py-2">{{ row.user_name }} <span class="text-slate-400">({{ row.user_email }})</span></td>
-                                    <td class="py-2">{{ row.district }}</td>
-                                    <td class="py-2">{{ row.school_name }}</td>
-                                    <td class="py-2">{{ row.target }}</td>
-                                </tr>
-                                <tr v-if="recentActivity.length === 0">
-                                    <td colspan="6" class="py-6 text-center text-slate-400 font-semibold">No tracked activity yet.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-            </section>
+        <div v-if="loadError" class="mb-6 rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            {{ loadError }}
         </div>
-    </div>
+
+        <section class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <AppStatCard label="Downloads" :value="stats.total_downloads" tone="blue" />
+            <AppStatCard label="File Opens" :value="stats.total_file_opens" tone="blue" />
+            <AppStatCard label="Folder Opens" :value="stats.total_folder_opens" tone="blue" />
+            <AppStatCard label="Active Users" :value="stats.active_users" tone="emerald" />
+            <AppStatCard label="Storage Used" :value="stats.storage_used" tone="slate" />
+        </section>
+
+        <section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <div class="xl:col-span-6">
+                <AppSectionCard title="By District" subtitle="Compare folder opens, file opens, and downloads by district.">
+                    <AppDataTable :headers="districtHeaders" :rows="districtStats" min-width="min-w-[620px]" empty-text="No district activity yet.">
+                        <tr v-for="row in districtStats" :key="row.district">
+                            <td class="font-bold">{{ row.district }}</td>
+                            <td>{{ row.total_actions }}</td>
+                            <td>{{ row.folders_opened }}</td>
+                            <td>{{ row.files_opened }}</td>
+                            <td>{{ row.files_downloaded }}</td>
+                        </tr>
+                    </AppDataTable>
+                </AppSectionCard>
+            </div>
+
+            <div class="xl:col-span-6">
+                <AppSectionCard title="By School" subtitle="Review engagement across schools within each district.">
+                    <AppDataTable :headers="schoolHeaders" :rows="schoolStats" min-width="min-w-[700px]" empty-text="No school activity yet.">
+                        <tr v-for="row in schoolStats" :key="`${row.district}-${row.school_name}`">
+                            <td class="font-bold">{{ row.district }}</td>
+                            <td>{{ row.school_name }}</td>
+                            <td>{{ row.total_actions }}</td>
+                            <td>{{ row.folders_opened }}</td>
+                            <td>{{ row.files_opened }}</td>
+                            <td>{{ row.files_downloaded }}</td>
+                        </tr>
+                    </AppDataTable>
+                </AppSectionCard>
+            </div>
+
+            <div class="xl:col-span-4">
+                <AppSectionCard title="Most Opened Folders" subtitle="Top folders by interaction count.">
+                    <div v-if="topFolders.length" class="space-y-2">
+                        <div v-for="row in topFolders" :key="row.folder_name" class="panel-muted flex items-center justify-between border px-3 py-2">
+                            <p class="truncate text-sm font-semibold">{{ row.folder_name }}</p>
+                            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{{ row.total }}</p>
+                        </div>
+                    </div>
+                    <AppEmptyState v-else title="No folder openings tracked yet." />
+                </AppSectionCard>
+            </div>
+
+            <div class="xl:col-span-4">
+                <AppSectionCard title="Most Opened Files" subtitle="Top files by open or download activity.">
+                    <div v-if="topFiles.length" class="space-y-2">
+                        <div v-for="row in topFiles" :key="row.file_title" class="panel-muted flex items-center justify-between border px-3 py-2">
+                            <p class="truncate text-sm font-semibold">{{ row.file_title }}</p>
+                            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{{ row.total }}</p>
+                        </div>
+                    </div>
+                    <AppEmptyState v-else title="No file interactions tracked yet." />
+                </AppSectionCard>
+            </div>
+
+            <div class="xl:col-span-4">
+                <AppSectionCard title="User Roles" subtitle="Current account totals by role type.">
+                    <div v-if="usersByRole.length" class="space-y-2">
+                        <div v-for="row in usersByRole" :key="row.role" class="panel-muted flex items-center justify-between border px-3 py-2">
+                            <p class="text-sm font-semibold uppercase">{{ row.role }}</p>
+                            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{{ row.total }}</p>
+                        </div>
+                    </div>
+                    <AppEmptyState v-else title="No users found." />
+                </AppSectionCard>
+            </div>
+
+            <div class="xl:col-span-12">
+                <AppSectionCard title="Recent Activity" subtitle="Most recent tracked actions across the platform.">
+                    <AppDataTable :headers="activityHeaders" :rows="recentActivity" min-width="min-w-[1000px]" empty-text="No tracked activity yet.">
+                        <tr v-for="row in recentActivity" :key="row.id">
+                            <td>{{ row.time }}</td>
+                            <td class="font-bold">{{ row.action }}</td>
+                            <td>
+                                {{ row.user_name }}
+                                <span class="text-slate-400">({{ row.user_email }})</span>
+                            </td>
+                            <td>{{ row.district }}</td>
+                            <td>{{ row.school_name }}</td>
+                            <td>{{ row.target }}</td>
+                        </tr>
+                    </AppDataTable>
+                </AppSectionCard>
+            </div>
+        </section>
+    </AdminLayout>
 </template>

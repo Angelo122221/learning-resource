@@ -1,4 +1,7 @@
 <script setup>
+import AppFormSection from '@/Components/AppFormSection.vue';
+import AppPageHeader from '@/Components/AppPageHeader.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -49,70 +52,64 @@ const deleteAccount = () => {
     <AuthenticatedLayout>
         <Head title="Profile" />
 
-        <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Profile
-            </h2>
-        </template>
+        <AppPageHeader
+            badge="PR"
+            title="Profile"
+            subtitle="Keep your account details accurate so the system can identify your role and access correctly."
+        />
 
-        <div class="py-12">
-            <div class="mx-auto max-w-3xl space-y-6 sm:px-6 lg:px-8">
-                <section class="bg-white p-6 shadow sm:rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900">Update Profile</h3>
-                    <form @submit.prevent="updateProfile" class="mt-4 space-y-4">
-                        <div>
-                            <InputLabel for="name" value="Name" />
-                            <TextInput id="name" class="mt-1 block w-full" v-model="profileForm.name" required autofocus />
-                            <InputError class="mt-2" :message="profileForm.errors.name" />
-                        </div>
+        <div class="mx-auto max-w-5xl space-y-6">
+            <AppFormSection title="Update Profile" subtitle="Edit your core account details.">
+                <form @submit.prevent="updateProfile" class="space-y-5">
+                    <div>
+                        <InputLabel for="name" value="Name" />
+                        <TextInput id="name" v-model="profileForm.name" class="mt-1 block w-full" required autofocus />
+                        <InputError class="mt-2" :message="profileForm.errors.name" />
+                    </div>
 
-                        <div>
-                            <InputLabel for="email" value="Email" />
-                            <TextInput id="email" type="email" class="mt-1 block w-full" v-model="profileForm.email" required />
-                            <InputError class="mt-2" :message="profileForm.errors.email" />
-                        </div>
+                    <div>
+                        <InputLabel for="email" value="Email" />
+                        <TextInput id="email" v-model="profileForm.email" type="email" class="mt-1 block w-full" required />
+                        <InputError class="mt-2" :message="profileForm.errors.email" />
+                    </div>
 
-                        <PrimaryButton :disabled="profileForm.processing">Save</PrimaryButton>
-                    </form>
-                </section>
+                    <PrimaryButton :disabled="profileForm.processing">Save</PrimaryButton>
+                </form>
+            </AppFormSection>
 
-                <section class="bg-white p-6 shadow sm:rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900">Update Password</h3>
-                    <form @submit.prevent="updatePassword" class="mt-4 space-y-4">
-                        <div>
-                            <InputLabel for="current_password" value="Current Password" />
-                            <TextInput id="current_password" type="password" class="mt-1 block w-full" v-model="passwordForm.current_password" required />
-                            <InputError class="mt-2" :message="passwordForm.errors.current_password" />
-                        </div>
-                        <div>
-                            <InputLabel for="password" value="New Password" />
-                            <TextInput id="password" type="password" class="mt-1 block w-full" v-model="passwordForm.password" required />
-                            <InputError class="mt-2" :message="passwordForm.errors.password" />
-                        </div>
-                        <div>
-                            <InputLabel for="password_confirmation" value="Confirm Password" />
-                            <TextInput id="password_confirmation" type="password" class="mt-1 block w-full" v-model="passwordForm.password_confirmation" required />
-                            <InputError class="mt-2" :message="passwordForm.errors.password_confirmation" />
-                        </div>
-                        <PrimaryButton :disabled="passwordForm.processing">Update Password</PrimaryButton>
-                    </form>
-                </section>
+            <AppFormSection title="Update Password" subtitle="Choose a strong password and keep your account secure.">
+                <form @submit.prevent="updatePassword" class="space-y-5">
+                    <div>
+                        <InputLabel for="current_password" value="Current Password" />
+                        <TextInput id="current_password" v-model="passwordForm.current_password" type="password" class="mt-1 block w-full" required />
+                        <InputError class="mt-2" :message="passwordForm.errors.current_password" />
+                    </div>
+                    <div>
+                        <InputLabel for="password" value="New Password" />
+                        <TextInput id="password" v-model="passwordForm.password" type="password" class="mt-1 block w-full" required />
+                        <InputError class="mt-2" :message="passwordForm.errors.password" />
+                    </div>
+                    <div>
+                        <InputLabel for="password_confirmation" value="Confirm Password" />
+                        <TextInput id="password_confirmation" v-model="passwordForm.password_confirmation" type="password" class="mt-1 block w-full" required />
+                        <InputError class="mt-2" :message="passwordForm.errors.password_confirmation" />
+                    </div>
+                    <PrimaryButton :disabled="passwordForm.processing">Update Password</PrimaryButton>
+                </form>
+            </AppFormSection>
 
-                <section class="bg-white p-6 shadow sm:rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900">Delete Account</h3>
-                    <p class="mt-1 text-sm text-gray-600">Enter your password to permanently delete your account.</p>
-                    <form @submit.prevent="deleteAccount" class="mt-4 space-y-4">
-                        <div>
-                            <InputLabel for="delete_password" value="Password" />
-                            <TextInput id="delete_password" type="password" class="mt-1 block w-full" v-model="deleteForm.password" required />
-                            <InputError class="mt-2" :message="deleteForm.errors.password" />
-                        </div>
-                        <button type="submit" class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-red-700">
-                            Delete Account
-                        </button>
-                    </form>
-                </section>
-            </div>
+            <AppFormSection title="Delete Account" subtitle="This action is permanent and cannot be undone.">
+                <form @submit.prevent="deleteAccount" class="space-y-5">
+                    <div>
+                        <InputLabel for="delete_password" value="Password" />
+                        <TextInput id="delete_password" v-model="deleteForm.password" type="password" class="mt-1 block w-full" required />
+                        <InputError class="mt-2" :message="deleteForm.errors.password" />
+                    </div>
+                    <DangerButton type="submit">
+                        Delete Account
+                    </DangerButton>
+                </form>
+            </AppFormSection>
         </div>
     </AuthenticatedLayout>
 </template>
