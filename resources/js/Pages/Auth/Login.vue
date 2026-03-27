@@ -29,30 +29,42 @@ const submit = () => {
     <GuestLayout>
         <Head title="Log in" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <div class="mb-8">
+            <p class="eyebrow">Secure Access</p>
+            <h2 class="mt-3 text-3xl font-black text-slate-950">Log in to the learning system</h2>
+            <p class="mt-3 text-sm font-medium leading-6 text-slate-500">
+                Use your DepEd email to access resource management, analytics, and the teacher portal.
+            </p>
+        </div>
+
+        <div v-if="status" class="mb-4 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit">
+        <form @submit.prevent="submit" class="space-y-5">
             <div>
                 <InputLabel for="email" value="DepEd Email" />
-                <TextInput id="email" type="email" class="mt-1 block w-full" v-model="form.email" required autofocus autocomplete="username" />
+                <TextInput id="email" v-model="form.email" type="email" class="mt-1 block w-full" required autofocus autocomplete="username" />
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="password" value="Password" />
-                <TextInput id="password" type="password" class="mt-1 block w-full" v-model="form.password" required autocomplete="current-password" />
+                <TextInput id="password" v-model="form.password" type="password" class="mt-1 block w-full" required autocomplete="current-password" />
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
-            <div class="mt-4 flex items-center">
+            <div class="flex items-center">
                 <Checkbox name="remember" v-model:checked="form.remember" />
-                <span class="ms-2 text-sm text-gray-600">Remember me</span>
+                <span class="ms-2 text-sm font-semibold text-slate-600">Remember me</span>
             </div>
 
-            <div class="mt-4 flex items-center justify-between">
-                <Link v-if="canResetPassword" :href="route('password.request')" class="text-sm text-gray-600 underline hover:text-gray-900">
+            <div class="flex items-center justify-between">
+                <Link
+                    v-if="canResetPassword"
+                    :href="route('password.request')"
+                    class="text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
+                >
                     Forgot password?
                 </Link>
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">

@@ -1,92 +1,113 @@
 <script>
-// We need this name defined so the component can call itself recursively for subfolders
-export default { name: 'FolderItem' }
+export default { name: 'FolderItem' };
 </script>
 
 <script setup>
+import AppStatusBadge from '@/Components/AppStatusBadge.vue';
 import { ref } from 'vue';
 
-const props = defineProps({
-    folder: Object
+defineProps({
+    folder: Object,
 });
 
-// Explicitly define the events we emit up to Index.vue
 defineEmits(['delete', 'lock']);
 
 const isOpen = ref(false);
 </script>
 
 <template>
-    <div class="mb-3 w-full">
-        <div class="flex items-center justify-between p-5 bg-white rounded-2xl shadow-sm hover:bg-slate-50 transition-all cursor-pointer group outline-none focus:outline-none" @click="isOpen = !isOpen">
+    <div class="w-full">
+        <button
+            type="button"
+            class="panel-muted flex w-full items-center justify-between border p-5 text-left transition-all hover:border-blue-200 hover:bg-white"
+            @click="isOpen = !isOpen"
+        >
             <div class="flex items-center gap-4">
-                <span class="text-3xl transition-transform duration-200" :class="{'rotate-90': isOpen}">
-                    {{ isOpen ? '📂' : '📁' }}
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-xs font-black uppercase tracking-[0.18em] text-white">
+                    {{ isOpen ? 'OPEN' : 'DIR' }}
                 </span>
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg font-black text-slate-800 uppercase tracking-tight group-hover:text-blue-600 transition-colors">{{ folder.name }}</span>
-                        <span v-if="folder.is_locked" class="text-xs bg-slate-800 text-white px-2 py-1 rounded-md font-bold uppercase tracking-widest">Locked</span>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-base font-black uppercase tracking-tight text-slate-900">{{ folder.name }}</span>
+                        <AppStatusBadge v-if="folder.is_locked" label="Locked" variant="locked" />
                     </div>
+                    <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        {{ folder.children_recursive?.length || 0 }} subfolders / {{ folder.files?.length || 0 }} files
+                    </p>
                 </div>
             </div>
-            
-            <div class="flex gap-2" @click.stop>
-                <button @click="$emit('lock', 'folder', folder.id)" 
+
+            <div class="flex flex-wrap gap-2" @click.stop>
+                <button
                     type="button"
-                    class="px-5 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all outline-none focus:outline-none" 
-                    :class="folder.is_locked ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                    class="action-btn-secondary"
+                    :class="folder.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700' : ''"
+                    @click="$emit('lock', 'folder', folder.id)"
+                >
                     {{ folder.is_locked ? 'Unlock' : 'Lock' }}
                 </button>
-                <button @click="$emit('delete', 'folder', folder.id)" 
+                <button
                     type="button"
-                    class="px-5 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all outline-none focus:outline-none">
+                    class="action-btn-danger"
+                    @click="$emit('delete', 'folder', folder.id)"
+                >
                     Delete
                 </button>
             </div>
-        </div>
+        </button>
 
-        <div v-if="isOpen" class="ml-8 mt-3 pl-6 border-l-4 border-slate-200 space-y-3">
-            
-            <FolderItem 
-                v-for="sub in folder.children_recursive" 
-                :key="sub.id" 
-                :folder="sub" 
+        <div v-if="isOpen" class="mt-3 space-y-3 border-l-4 border-slate-200 pl-5 md:ml-6 md:pl-6">
+            <FolderItem
+                v-for="sub in folder.children_recursive"
+                :key="sub.id"
+                :folder="sub"
                 @delete="(type, id) => $emit('delete', type, id)"
                 @lock="(type, id) => $emit('lock', type, id)"
             />
 
-            <div v-for="file in folder.files" :key="file.id" 
-                class="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm outline-none">
-                
-                <div class="flex items-center gap-4">
-                    <span class="text-2xl" v-if="file.is_locked">🔒</span>
-                    <span class="text-2xl" v-else-if="file.file_type === 'pdf'">📕</span>
-                    <span class="text-2xl" v-else>📄</span>
-                    
-                    <span class="text-md font-bold text-slate-700" :class="{'line-through text-slate-400': file.is_locked}">
-                        {{ file.title }}
-                        <span class="text-xs text-slate-400 ml-2 uppercase tracking-widest">{{ file.file_type }}</span>
+            <div
+                v-for="file in folder.files"
+                :key="file.id"
+                class="panel-muted flex items-center justify-between border p-4"
+            >
+                <div class="flex min-w-0 items-center gap-4">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                        {{ file.file_type === 'pdf' ? 'PDF' : 'FILE' }}
                     </span>
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-black text-slate-800" :class="{ 'line-through text-slate-400': file.is_locked }">
+                            {{ file.title }}
+                        </p>
+                        <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                            {{ file.file_type }}
+                        </p>
+                    </div>
+                    <AppStatusBadge v-if="file.is_locked" label="Locked" variant="locked" />
                 </div>
-                
-                <div class="flex gap-2">
-                    <button @click="$emit('lock', 'file', file.id)" 
+
+                <div class="flex flex-wrap gap-2">
+                    <button
                         type="button"
-                        class="px-5 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all outline-none focus:outline-none" 
-                        :class="file.is_locked ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                        class="action-btn-secondary"
+                        :class="file.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700' : ''"
+                        @click="$emit('lock', 'file', file.id)"
+                    >
                         {{ file.is_locked ? 'Unlock' : 'Lock' }}
                     </button>
-                    <button @click="$emit('delete', 'file', file.id)" 
+                    <button
                         type="button"
-                        class="px-5 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all outline-none focus:outline-none">
+                        class="action-btn-danger"
+                        @click="$emit('delete', 'file', file.id)"
+                    >
                         Delete
                     </button>
                 </div>
             </div>
 
-            <div v-if="!folder.children_recursive?.length && !folder.files?.length" 
-                class="p-4 text-xs text-slate-400 font-bold uppercase italic tracking-widest rounded-xl bg-slate-50">
+            <div
+                v-if="!folder.children_recursive?.length && !folder.files?.length"
+                class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400"
+            >
                 Directory is empty
             </div>
         </div>

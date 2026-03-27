@@ -26,45 +26,60 @@ const submit = () => {
     <GuestLayout>
         <Head title="Register" />
 
-        <form @submit.prevent="submit">
+        <div class="mb-8">
+            <p class="eyebrow">Teacher Registration</p>
+            <h2 class="mt-3 text-3xl font-black text-slate-950">Create a DepEd teacher account</h2>
+            <p class="mt-3 text-sm font-medium leading-6 text-slate-500">
+                Complete your profile so the system can route resources and analytics to the right district and school.
+            </p>
+        </div>
+
+        <form @submit.prevent="submit" class="space-y-5">
             <div>
                 <InputLabel for="name" value="Full Name" />
-                <TextInput id="name" type="text" class="mt-1 block w-full" v-model="form.name" required autofocus autocomplete="name" />
+                <TextInput id="name" v-model="form.name" type="text" class="mt-1 block w-full" required autofocus autocomplete="name" />
                 <InputError class="mt-2" :message="form.errors.name" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="email" value="DepEd Email" />
-                <TextInput id="email" type="email" class="mt-1 block w-full" v-model="form.email" required autocomplete="username" />
+                <TextInput id="email" v-model="form.email" type="email" class="mt-1 block w-full" required autocomplete="username" />
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="district" value="District" />
-                <TextInput id="district" type="text" class="mt-1 block w-full" v-model="form.district" required />
+                <TextInput id="district" v-model="form.district" type="text" class="mt-1 block w-full" required />
                 <InputError class="mt-2" :message="form.errors.district" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="school_name" value="School Name" />
-                <TextInput id="school_name" type="text" class="mt-1 block w-full" v-model="form.school_name" required />
+                <TextInput id="school_name" v-model="form.school_name" type="text" class="mt-1 block w-full" required />
                 <InputError class="mt-2" :message="form.errors.school_name" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="password" value="Password" />
-                <TextInput id="password" type="password" class="mt-1 block w-full" v-model="form.password" required autocomplete="new-password" />
+                <TextInput id="password" v-model="form.password" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
-            <div class="mt-4">
+            <div>
                 <InputLabel for="password_confirmation" value="Confirm Password" />
-                <TextInput id="password_confirmation" type="password" class="mt-1 block w-full" v-model="form.password_confirmation" required autocomplete="new-password" />
+                <TextInput
+                    id="password_confirmation"
+                    v-model="form.password_confirmation"
+                    type="password"
+                    class="mt-1 block w-full"
+                    required
+                    autocomplete="new-password"
+                />
                 <InputError class="mt-2" :message="form.errors.password_confirmation" />
             </div>
 
-            <div class="mt-4 flex items-center justify-end">
-                <Link :href="route('login')" class="text-sm text-gray-600 underline hover:text-gray-900">
+            <div class="flex items-center justify-end">
+                <Link :href="route('login')" class="text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-900">
                     Already registered?
                 </Link>
 
