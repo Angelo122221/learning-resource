@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm, router, Link } from '@inertiajs/vue3';
 import FolderItem from './FolderItem.vue';
 
@@ -9,6 +9,7 @@ const props = defineProps({
     stats: Object,
     carouselImages: Array,
     featuredVideos: Array,
+    uploadLimits: Object,
 });
 
 const folderForm = useForm({
@@ -46,6 +47,68 @@ const videoEditForm = useForm({
 
 const editingCarouselId = ref(null);
 const editingVideoId = ref(null);
+const uploadFileInput = ref(null);
+const previewImageInput = ref(null);
+
+const FILE_LIMIT_FALLBACK_BYTES = 10 * 1024 * 1024 * 1024;
+const PREVIEW_LIMIT_FALLBACK_BYTES = 5 * 1024 * 1024;
+
+const toReadableSize = (bytes) => {
+    if (bytes >= 1024 * 1024 * 1024) {
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+
+    if (bytes >= 1024 * 1024) {
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    if (bytes >= 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${bytes} B`;
+};
+
+const maxBytesByField = (field) => {
+    if (field === 'preview_image') {
+        return props.uploadLimits?.max_preview_bytes ?? PREVIEW_LIMIT_FALLBACK_BYTES;
+    }
+
+    return props.uploadLimits?.max_file_bytes ?? FILE_LIMIT_FALLBACK_BYTES;
+};
+
+const maxSizeLabelByField = (field) => {
+    if (field === 'preview_image') {
+        return props.uploadLimits?.max_preview_label ?? toReadableSize(maxBytesByField(field));
+    }
+
+    return props.uploadLimits?.max_file_label ?? toReadableSize(maxBytesByField(field));
+};
+
+const fileMaxSizeLabel = computed(() => maxSizeLabelByField('file'));
+const previewMaxSizeLabel = computed(() => maxSizeLabelByField('preview_image'));
+
+const setSingleFile = (field, event) => {
+    const files = Array.from(event.target?.files || []);
+
+    if (files.length > 1) {
+        fileForm[field] = null;
+        fileForm.setError(field, 'Please select only one file.');
+        event.target.value = '';
+        return;
+    }
+
+    const selectedFile = files[0] || null;
+    if (selectedFile && selectedFile.size > maxBytesByField(field)) {
+        fileForm[field] = null;
+        fileForm.setError(field, `File exceeds the limit (${maxSizeLabelByField(field)} max).`);
+        event.target.value = '';
+        return;
+    }
+
+    fileForm.clearErrors(field);
+    fileForm[field] = selectedFile;
+};
 
 const selectFolder = (id) => {
     folderForm.parent_id = id;
@@ -65,6 +128,8 @@ const submitFile = () => {
         preserveScroll: true,
         onSuccess: () => {
             fileForm.reset();
+            if (uploadFileInput.value) uploadFileInput.value.value = '';
+            if (previewImageInput.value) previewImageInput.value.value = '';
         },
     });
 };
@@ -280,8 +345,12 @@ const toggleLock = (type, id) => {
                                     <option v-for="f in allFolders" :key="f.id" :value="f.id">{{ f.full_path }}</option>
                                 </select>
                                 <input v-model="fileForm.title" type="text" placeholder="File Title" class="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-semibold bg-slate-50">
-                                <input type="file" @input="fileForm.file = $event.target.files[0]" class="w-full text-xs font-semibold">
-                                <input type="file" accept="image/*" @input="fileForm.preview_image = $event.target.files[0]" class="w-full text-xs font-semibold">
+                                <input ref="uploadFileInput" type="file" accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.webp" @change="setSingleFile('file', $event)" class="w-full text-xs font-semibold">
+                                <p class="text-[11px] font-semibold text-slate-500">Max file size: {{ fileMaxSizeLabel }} (one file per upload)</p>
+                                <p v-if="fileForm.errors.file" class="text-[11px] font-semibold text-red-600">{{ fileForm.errors.file }}</p>
+                                <input ref="previewImageInput" type="file" accept="image/*" @change="setSingleFile('preview_image', $event)" class="w-full text-xs font-semibold">
+                                <p class="text-[11px] font-semibold text-slate-500">Preview image max size: {{ previewMaxSizeLabel }}</p>
+                                <p v-if="fileForm.errors.preview_image" class="text-[11px] font-semibold text-red-600">{{ fileForm.errors.preview_image }}</p>
                                 <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all">
                                     Upload
                                 </button>

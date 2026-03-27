@@ -16,14 +16,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-use Throwable;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class ResourceController extends Controller
 {
+    private const MAX_FILE_KB = 10485760; // 10 GB
+
+    private const MAX_PREVIEW_IMAGE_KB = 5120;
+
     public function index(): Response
     {
         return Inertia::render('Admin/Resources/Index', [
@@ -40,6 +44,7 @@ class ResourceController extends Controller
             ],
             'carouselImages' => CarouselImage::latest()->get(),
             'featuredVideos' => FeaturedVideo::latest()->get(),
+            'uploadLimits' => $this->uploadLimits(),
         ]);
     }
 
@@ -186,11 +191,23 @@ class ResourceController extends Controller
 
     public function storeFile(Request $request): RedirectResponse
     {
+        if (is_array($request->file('file'))) {
+            return back()->withErrors([
+                'file' => 'Please upload only one file at a time.',
+            ])->withInput();
+        }
+
+        if (is_array($request->file('preview_image'))) {
+            return back()->withErrors([
+                'preview_image' => 'Please upload only one preview image at a time.',
+            ])->withInput();
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:'.self::MAX_FILE_KB,
             'folder_id' => 'required|exists:folders,id',
-            'preview_image' => 'nullable|image|max:5120',
+            'preview_image' => 'nullable|image|max:'.self::MAX_PREVIEW_IMAGE_KB,
         ]);
 
         $uploadedFile = $request->file('file');
@@ -561,5 +578,68 @@ class ResourceController extends Controller
             'file_downloaded' => 'Downloaded File',
             default => ucfirst(str_replace('_', ' ', $action)),
         };
+    }
+
+    private function uploadLimits(): array
+    {
+        $phpUploadMaxBytes = $this->normalizeIniSizeToBytes((string) ini_get('upload_max_filesize'));
+        $phpPostMaxBytes = $this->normalizeIniSizeToBytes((string) ini_get('post_max_size'));
+
+        $appFileMaxBytes = self::MAX_FILE_KB * 1024;
+        $appPreviewMaxBytes = self::MAX_PREVIEW_IMAGE_KB * 1024;
+
+        $effectiveFileMaxBytes = min($appFileMaxBytes, $phpUploadMaxBytes, $phpPostMaxBytes);
+        $effectivePreviewMaxBytes = min($appPreviewMaxBytes, $phpUploadMaxBytes, $phpPostMaxBytes);
+
+        return [
+            'max_file_bytes' => $effectiveFileMaxBytes,
+            'max_preview_bytes' => $effectivePreviewMaxBytes,
+            'max_file_label' => $this->formatBytes($effectiveFileMaxBytes),
+            'max_preview_label' => $this->formatBytes($effectivePreviewMaxBytes),
+            'php_upload_max_filesize' => (string) ini_get('upload_max_filesize'),
+            'php_post_max_size' => (string) ini_get('post_max_size'),
+        ];
+    }
+
+    private function normalizeIniSizeToBytes(string $size): int
+    {
+        $value = trim($size);
+        if ($value === '') {
+            return PHP_INT_MAX;
+        }
+
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+        if (! is_numeric($value)) {
+            $number = (float) substr($value, 0, -1);
+        }
+
+        $multiplier = match ($unit) {
+            'g' => 1024 * 1024 * 1024,
+            'm' => 1024 * 1024,
+            'k' => 1024,
+            default => 1,
+        };
+
+        $bytes = (int) round($number * $multiplier);
+
+        return $bytes > 0 ? $bytes : PHP_INT_MAX;
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return round($bytes / (1024 * 1024 * 1024), 1).' GB';
+        }
+
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / (1024 * 1024), 1).' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 1).' KB';
+        }
+
+        return $bytes.' B';
     }
 }

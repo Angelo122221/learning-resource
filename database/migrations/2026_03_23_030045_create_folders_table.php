@@ -14,18 +14,18 @@ return new class extends Migration
     {
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
-            
+
             // The display name of the folder
-            $table->string('name'); 
-            
+            $table->string('name');
+
             // The Parent ID allows a folder to live inside another folder.
             // constrained('folders') ensures the parent actually exists.
             // onDelete('cascade') means if you delete a parent, all subfolders are deleted too.
             $table->foreignId('parent_id')
-                  ->nullable()
-                  ->constrained('folders')
-                  ->onDelete('cascade');
-                  
+                ->nullable()
+                ->constrained('folders')
+                ->onDelete('cascade');
+
             $table->timestamps();
         });
     }
@@ -39,7 +39,7 @@ return new class extends Migration
         Schema::table('folders', function (Blueprint $table) {
             $table->dropForeign(['parent_id']);
         });
-        
+
         Schema::dropIfExists('folders');
     }
 };

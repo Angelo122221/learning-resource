@@ -20,10 +20,7 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_can_open_users_and_analytics_pages(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        $admin = $this->createAdminUser();
 
         $this->actingAs($admin)
             ->get('/admin/users')
@@ -36,10 +33,7 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_can_create_update_and_delete_teacher_accounts(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        $admin = $this->createAdminUser();
 
         $this->actingAs($admin)
             ->post('/admin/users', [
@@ -92,10 +86,7 @@ class AdminManagementTest extends TestCase
     {
         Storage::fake('public');
 
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        $admin = $this->createAdminUser();
 
         $this->actingAs($admin)
             ->post('/admin/carousel', [
@@ -126,10 +117,7 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_can_create_update_and_delete_featured_videos(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        $admin = $this->createAdminUser();
 
         $this->actingAs($admin)
             ->post('/admin/videos', [
@@ -159,9 +147,94 @@ class AdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_upload_a_single_resource_file(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $folder = Folder::create([
+            'name' => 'Science',
+            'parent_id' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->post('/admin/files', [
+                'title' => 'Lesson Plan',
+                'folder_id' => $folder->id,
+                'file' => UploadedFile::fake()->create('lesson-plan.pdf', 120, 'application/pdf'),
+                'preview_image' => UploadedFile::fake()->image('lesson-preview.jpg'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $resourceFile = ResourceFile::firstOrFail();
+
+        $this->assertSame('Lesson Plan', $resourceFile->title);
+        $this->assertSame('pdf', $resourceFile->file_type);
+        $this->assertNotNull($resourceFile->preview_image_path);
+
+        $this->assertTrue(Storage::disk('public')->exists($resourceFile->file_path));
+        $this->assertTrue(Storage::disk('public')->exists($resourceFile->preview_image_path));
+    }
+
+    public function test_admin_cannot_upload_multiple_resource_files_in_a_single_request(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $folder = Folder::create([
+            'name' => 'Math',
+            'parent_id' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/resources')
+            ->post('/admin/files', [
+                'title' => 'Batch Upload',
+                'folder_id' => $folder->id,
+                'file' => [
+                    UploadedFile::fake()->create('one.pdf', 50, 'application/pdf'),
+                    UploadedFile::fake()->create('two.pdf', 50, 'application/pdf'),
+                ],
+            ])
+            ->assertRedirect('/admin/resources')
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('resource_files', 0);
+    }
+
+    public function test_admin_can_upload_a_video_file(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $folder = Folder::create([
+            'name' => 'Videos',
+            'parent_id' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->post('/admin/files', [
+                'title' => 'Training Video',
+                'folder_id' => $folder->id,
+                'file' => UploadedFile::fake()->create('training-video.mp4', 1024, 'video/mp4'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $resourceFile = ResourceFile::firstOrFail();
+
+        $this->assertSame('Training Video', $resourceFile->title);
+        $this->assertSame('mp4', $resourceFile->file_type);
+        $this->assertTrue(Storage::disk('public')->exists($resourceFile->file_path));
+    }
+
     public function test_folder_open_tracking_endpoint_records_activity(): void
     {
-        $teacher = User::factory()->create([
+        $teacher = $this->createTeacherUser([
             'role' => 'teacher',
             'district' => 'District C',
             'school_name' => 'School C',
@@ -193,12 +266,9 @@ class AdminManagementTest extends TestCase
 
     public function test_analytics_page_displays_tracked_district_and_school_data(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'role' => 'admin',
-        ]);
+        $admin = $this->createAdminUser();
 
-        $teacher = User::factory()->create([
+        $teacher = $this->createTeacherUser([
             'role' => 'teacher',
             'district' => 'North District',
             'school_name' => 'North National High School',
@@ -244,5 +314,26 @@ class AdminManagementTest extends TestCase
             ->assertSee('North District')
             ->assertSee('North National High School')
             ->assertSee('Algebra Basics');
+    }
+
+    private function createAdminUser(array $overrides = []): User
+    {
+        /** @var User $admin */
+        $admin = User::factory()->createOne(array_merge([
+            'is_admin' => true,
+            'role' => 'admin',
+        ], $overrides));
+
+        return $admin;
+    }
+
+    private function createTeacherUser(array $overrides = []): User
+    {
+        /** @var User $teacher */
+        $teacher = User::factory()->createOne(array_merge([
+            'role' => 'teacher',
+        ], $overrides));
+
+        return $teacher;
     }
 }

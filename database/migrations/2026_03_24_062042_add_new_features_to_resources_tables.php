@@ -40,10 +40,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             // Can be a file OR a folder action
             $table->foreignId('folder_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('resource_file_id')->nullable(); 
+            $table->unsignedBigInteger('resource_file_id')->nullable();
             $table->string('action'); // e.g., 'viewed_folder', 'downloaded_file'
             $table->timestamps();
-            
+
             // Assuming your files table is named `resource_files`
             $table->foreign('resource_file_id')->references('id')->on('resource_files')->cascadeOnDelete();
         });
@@ -54,11 +54,11 @@ return new class extends Migration
         Schema::dropIfExists('resource_trackings');
         Schema::dropIfExists('featured_videos');
         Schema::dropIfExists('carousel_images');
-        
+
         Schema::table('resource_files', function (Blueprint $table) {
             $table->dropColumn('preview_image_path');
         });
-        
+
         Schema::table('folders', function (Blueprint $table) {
             $table->dropColumn('description');
         });

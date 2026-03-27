@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,9 +17,22 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // THIS IS THE CRITICAL PART
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'admin' => AdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (PostTooLargeException $exception, Request $request) {
+            $postMaxSize = (string) ini_get('post_max_size');
+            $message = "Upload failed because it exceeded the server request size limit ({$postMaxSize}). Please upload one file at a time and use a smaller file.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], SymfonyResponse::HTTP_REQUEST_ENTITY_TOO_LARGE);
+            }
+
+            return back()->withErrors([
+                'file' => $message,
+            ])->withInput();
+        });
     })->create();

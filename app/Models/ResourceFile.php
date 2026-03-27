@@ -11,12 +11,12 @@ class ResourceFile extends Model
     // The $fillable array tells Laravel exactly which columns are allowed to be saved.
     // 'file_type' and 'is_locked' must be here!
     protected $fillable = [
-        'folder_id', 
-        'title', 
-        'file_path', 
+        'folder_id',
+        'title',
+        'file_path',
         'preview_image_path',
-        'file_type', 
-        'is_locked'
+        'file_type',
+        'is_locked',
     ];
 
     // Automatically converts 0/1 to false/true in Vue

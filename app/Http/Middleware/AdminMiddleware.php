@@ -15,7 +15,7 @@ class AdminMiddleware
     {
         // 1. Check if user is logged in
         // 2. Check if the 'is_admin' column in the database is true
-        if (!$request->user() || !$request->user()->is_admin) {
+        if (! $request->user() || ! $request->user()->is_admin) {
             // If not an admin, boot them to the standard dashboard
             return redirect()->route('dashboard');
         }

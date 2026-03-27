@@ -11,22 +11,18 @@ Route::get('/', function () {
         return redirect()->route('dashboard');
     }
 
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => app()->version(),
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    
+
     // Standard User Dashboard
     Route::get('/dashboard', function () {
         // Redirect admins straight to the resource manager
         if (request()->user() && request()->user()->is_admin) {
             return redirect()->route('admin.resources');
         }
+
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
@@ -36,16 +32,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/resources', [UserResourceController::class, 'index'])->name('resources.index');
     Route::post('/resources/folders/{folder}/open', [UserResourceController::class, 'openFolder'])->name('resources.folders.open');
     Route::get('/resources/download/{file}', [UserResourceController::class, 'download'])->name('resources.download');
-    
+
     // PREVIEW ROUTE
     Route::get('/resources/preview/{file}', [UserResourceController::class, 'preview'])->name('resources.preview');
-
 
     // ----------------------------------------------------
     // ADMIN END: Only admins can manage files and folders
     // ----------------------------------------------------
     Route::middleware(['admin'])->prefix('admin')->group(function () {
-        
+
         // Main Explorer View & New Analytics Dashboard
         Route::get('/resources', [AdminResourceController::class, 'index'])->name('admin.resources');
         Route::get('/analytics', [AdminResourceController::class, 'analytics'])->name('admin.analytics'); // NEW!
@@ -54,12 +49,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return redirect()->route('admin.analytics');
         });
         Route::get('/users', [AdminResourceController::class, 'users'])->name('admin.users');
-        
+
         // Folder Management
         Route::post('/folders', [AdminResourceController::class, 'storeFolder'])->name('admin.folders.store');
         Route::delete('/folders/{folder}', [AdminResourceController::class, 'destroyFolder'])->name('admin.folders.destroy');
         Route::patch('/folders/{folder}/toggle-lock', [AdminResourceController::class, 'toggleFolderLock'])->name('admin.folders.toggle-lock');
-        
+
         // File Management
         Route::post('/files', [AdminResourceController::class, 'storeFile'])->name('admin.files.store');
         Route::delete('/files/{file}', [AdminResourceController::class, 'destroyFile'])->name('admin.files.destroy');
