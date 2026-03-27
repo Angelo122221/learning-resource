@@ -143,28 +143,24 @@ onBeforeUnmount(() => {
 
 const partnerOrganizations = [
     {
-        name: 'Schools Division Office',
-        short: 'SDO',
-        description: 'Division leadership and implementation support',
-        tone: 'from-sky-500 to-blue-700',
+        name: 'Enhanced Basic Education Information Systems (EBEIS)',
+        image: '/images/partners/ebeis.png',
+        description: 'Education information system support for planning, reporting, and school data management.',
     },
     {
-        name: 'DepEd Region',
-        short: 'REG',
-        description: 'Regional coordination and resource alignment',
-        tone: 'from-indigo-500 to-indigo-700',
+        name: 'Learner Information System (LIS)',
+        image: '/images/partners/lis.png',
+        description: 'Learner profile and enrollment information access across the DepEd system.',
     },
     {
-        name: 'Learning Resource Team',
-        short: 'LRT',
-        description: 'Content curation and teacher-facing updates',
-        tone: 'from-emerald-500 to-emerald-700',
+        name: 'Learning Resource Management and Development System (LRMDS)',
+        image: '/images/partners/lrmds.png',
+        description: 'Learning resource management, curation, and distribution for classroom use.',
     },
     {
-        name: 'Partner Schools',
-        short: 'SCH',
-        description: 'Collaborative classroom implementation network',
-        tone: 'from-amber-500 to-orange-600',
+        name: 'DepEd Partnership Database System',
+        image: '/images/partners/deped-partnership-database-system.png',
+        description: 'Partnership tracking and transparency support for DepEd collaboration programs.',
     },
 ];
 </script>
@@ -259,8 +255,8 @@ const partnerOrganizations = [
                             <p class="line-clamp-2 text-center text-base font-black uppercase tracking-tight text-slate-900">
                                 {{ item.slide.title }}
                             </p>
-                        </div>
-                    </article>
+                    </div>
+                </article>
                 </div>
 
                 <div class="mt-6 flex items-center justify-center gap-2">
@@ -395,17 +391,33 @@ const partnerOrganizations = [
                         :key="partner.name"
                         class="rounded-[1.6rem] border border-slate-100 bg-slate-50 p-4 text-center"
                     >
-                        <div
-                            class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br text-lg font-black text-white shadow-lg"
-                            :class="partner.tone"
-                        >
-                            {{ partner.short }}
-                        </div>
-                        <p class="mt-4 text-sm font-black uppercase tracking-[0.12em] text-slate-900">{{ partner.name }}</p>
+                        <div class="flex min-h-[6rem] items-center justify-center">
+                            <img
+                                :src="partner.image"
+                                :alt="partner.name"
+                                class="h-auto max-h-24 w-auto max-w-[7rem] object-contain"
+                            />
+                </div>
+                        <p class="mt-4 text-sm font-black uppercase tracking-[0.08em] text-slate-900">{{ partner.name }}</p>
                         <p class="mt-2 text-xs font-medium leading-5 text-slate-500">{{ partner.description }}</p>
                     </article>
-                </div>
-            </div>
+        </div>
+    </div>
         </section>
     </UserLayout>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+</style>

@@ -1,6 +1,5 @@
 <script setup>
 import AppFlashBanner from '@/Components/AppFlashBanner.vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -30,9 +29,11 @@ const showingNavigationDropdown = ref(false);
                 <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
                     <div class="flex items-start justify-between gap-4">
                         <Link href="/resources" class="flex min-w-0 items-start gap-3 sm:gap-4">
-                            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-white/55 bg-white/12 p-2 text-white shadow-lg backdrop-blur">
-                                <ApplicationLogo class="h-9 w-9 fill-current" />
-                            </div>
+                            <img
+                                src="/images/crystal-login-logo.png"
+                                alt="CRYSTAL Portal official logo"
+                                class="mt-2 h-auto w-14 shrink-0 object-contain sm:w-16"
+                            />
                             <div class="min-w-0 pt-1">
                                 <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/75 sm:text-[11px]">
                                     Republic of the Philippines
