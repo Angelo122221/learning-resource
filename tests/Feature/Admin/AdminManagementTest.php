@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Announcement;
 use App\Models\CarouselImage;
 use App\Models\FeaturedVideo;
 use App\Models\Folder;
@@ -144,6 +145,47 @@ class AdminManagementTest extends TestCase
 
         $this->assertDatabaseMissing('featured_videos', [
             'id' => $video->id,
+        ]);
+    }
+
+    public function test_admin_can_create_update_and_delete_announcements(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $this->actingAs($admin)
+            ->post('/admin/announcements', [
+                'title' => 'Portal Notice',
+                'content' => 'Initial announcement content.',
+                'image' => UploadedFile::fake()->image('announcement.jpg'),
+            ])
+            ->assertRedirect();
+
+        $announcement = Announcement::firstOrFail();
+
+        $this->assertSame('Portal Notice', $announcement->title);
+        $this->assertNotNull($announcement->image_path);
+        $this->assertTrue(Storage::disk('public')->exists($announcement->image_path));
+
+        $this->actingAs($admin)
+            ->patch("/admin/announcements/{$announcement->id}", [
+                'title' => 'Portal Notice Updated',
+                'content' => 'Updated announcement content.',
+                'remove_image' => true,
+            ])
+            ->assertRedirect();
+
+        $announcement->refresh();
+        $this->assertSame('Portal Notice Updated', $announcement->title);
+        $this->assertNull($announcement->image_path);
+
+        $this->actingAs($admin)
+            ->delete("/admin/announcements/{$announcement->id}")
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('announcements', [
+            'id' => $announcement->id,
         ]);
     }
 

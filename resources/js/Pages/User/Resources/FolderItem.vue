@@ -164,7 +164,7 @@ const closeModal = () => {
                         </div>
 
                         <div v-if="!folder.children_recursive?.length && !folder.files?.length" class="rounded-[2rem] border-4 border-dashed border-slate-200 bg-white p-16 text-center">
-                            <p class="text-sm font-black uppercase italic tracking-[0.18em] text-slate-400">Directory is empty</p>
+                            <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">Directory is empty</p>
                         </div>
                     </div>
                 </div>

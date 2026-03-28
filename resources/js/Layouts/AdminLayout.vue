@@ -6,7 +6,6 @@ const navItems = [
     { label: 'Resources', href: '/admin/resources', active: 'admin.resources' },
     { label: 'Analytics', href: '/admin/analytics', active: 'admin.analytics' },
     { label: 'Users', href: '/admin/users', active: 'admin.users' },
-    { label: 'Profile', href: '/profile', active: 'profile.edit' },
 ];
 </script>
 

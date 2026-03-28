@@ -67,6 +67,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/videos', [AdminResourceController::class, 'storeVideo'])->name('admin.videos.store');
         Route::patch('/videos/{video}', [AdminResourceController::class, 'updateVideo'])->name('admin.videos.update');
         Route::delete('/videos/{video}', [AdminResourceController::class, 'destroyVideo'])->name('admin.videos.destroy');
+        Route::post('/announcements', [AdminResourceController::class, 'storeAnnouncement'])->name('admin.announcements.store');
+        Route::patch('/announcements/{announcement}', [AdminResourceController::class, 'updateAnnouncement'])->name('admin.announcements.update');
+        Route::delete('/announcements/{announcement}', [AdminResourceController::class, 'destroyAnnouncement'])->name('admin.announcements.destroy');
 
         // User Management
         Route::post('/users', [AdminResourceController::class, 'storeUser'])->name('admin.users.store');

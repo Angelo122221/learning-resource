@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\CarouselImage;
 use App\Models\FeaturedVideo;
 use App\Models\Folder;
@@ -44,6 +45,7 @@ class ResourceController extends Controller
             ],
             'carouselImages' => CarouselImage::latest()->get(),
             'featuredVideos' => FeaturedVideo::latest()->get(),
+            'announcements' => Announcement::latest()->get(),
             'uploadLimits' => $this->uploadLimits(),
         ]);
     }
@@ -349,6 +351,70 @@ class ResourceController extends Controller
         $video->delete();
 
         return back()->with('success', 'Featured video deleted successfully.');
+    }
+
+    public function storeAnnouncement(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string', 'max:5000'],
+            'image' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('announcements', 'public')
+            : null;
+
+        Announcement::create([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'image_path' => $imagePath,
+        ]);
+
+        return back()->with('success', 'Announcement published successfully.');
+    }
+
+    public function updateAnnouncement(Request $request, Announcement $announcement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string', 'max:5000'],
+            'image' => ['nullable', 'image', 'max:5120'],
+            'remove_image' => ['nullable', 'boolean'],
+        ]);
+
+        $shouldRemoveImage = (bool) ($validated['remove_image'] ?? false);
+        $imagePath = $announcement->image_path;
+
+        if ($request->hasFile('image')) {
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            $imagePath = $request->file('image')->store('announcements', 'public');
+        } elseif ($shouldRemoveImage && $imagePath) {
+            Storage::disk('public')->delete($imagePath);
+            $imagePath = null;
+        }
+
+        $announcement->update([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'image_path' => $imagePath,
+        ]);
+
+        return back()->with('success', 'Announcement updated successfully.');
+    }
+
+    public function destroyAnnouncement(Announcement $announcement): RedirectResponse
+    {
+        if ($announcement->image_path) {
+            Storage::disk('public')->delete($announcement->image_path);
+        }
+
+        $announcement->delete();
+
+        return back()->with('success', 'Announcement deleted successfully.');
     }
 
     public function analytics(): Response
