@@ -145,33 +145,28 @@ const partnerOrganizations = [
     {
         name: 'Enhanced Basic Education Information Systems (EBEIS)',
         image: '/images/partners/ebeis.png',
-        description: 'Education information system support for planning, reporting, and school data management.',
     },
     {
         name: 'Learner Information System (LIS)',
         image: '/images/partners/lis.png',
-        description: 'Learner profile and enrollment information access across the DepEd system.',
     },
     {
         name: 'Learning Resource Management and Development System (LRMDS)',
         image: '/images/partners/lrmds.png',
-        description: 'Learning resource management, curation, and distribution for classroom use.',
     },
     {
         name: 'DepEd Partnership Database System',
         image: '/images/partners/deped-partnership-database-system.png',
-        description: 'Partnership tracking and transparency support for DepEd collaboration programs.',
     },
 ];
 </script>
 
 <template>
-    <Head title="Learning Resources" />
+    <Head title="Crystal Portal" />
 
     <UserLayout>
         <section>
             <div class="mb-6 text-center">
-                <p class="eyebrow text-slate-500">Featured Collection</p>
                 <h2 class="mt-3 text-3xl font-black uppercase tracking-tight text-slate-950 md:text-4xl">
                     Learning Resource Center
                 </h2>
@@ -383,7 +378,6 @@ const partnerOrganizations = [
                 <span class="h-2.5 w-2.5 rounded-full bg-orange-400" />
                 <h2 class="text-xl font-black text-slate-950">Partner Organization</h2>
             </div>
-
             <div class="rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:p-6">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <article

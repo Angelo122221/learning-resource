@@ -21,7 +21,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Forgot Password" />
+        <Head title="Crystal Portal" />
 
         <div class="mb-8">
             <p class="eyebrow">Password Recovery</p>

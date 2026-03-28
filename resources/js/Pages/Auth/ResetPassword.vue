@@ -27,7 +27,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Reset Password" />
+        <Head title="Crystal Portal" />
 
         <div class="mb-8">
             <p class="eyebrow">Set New Password</p>

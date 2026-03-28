@@ -20,7 +20,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head title="Welcome" />
+    <Head title="Crystal Portal" />
 
     <div class="app-shell">
         <div class="app-container py-10">

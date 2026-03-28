@@ -16,7 +16,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Email Verification" />
+        <Head title="Crystal Portal" />
 
         <div class="mb-8">
             <p class="eyebrow">Email Verification</p>

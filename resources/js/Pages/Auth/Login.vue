@@ -25,7 +25,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Crystal Portal" />
 
     <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)]">
         <div class="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-10">
@@ -50,14 +50,9 @@ const submit = () => {
                         </div>
                     </Link>
 
-                    <div class="mt-8 max-w-lg rounded-[2rem] border border-white/70 bg-white/60 px-6 py-6 shadow-[0_16px_40px_rgba(15,23,42,0.04)] backdrop-blur">
-                        <p class="text-lg font-semibold leading-8 text-slate-700">
-                            Access learning resources, teaching tools, and digital materials in one place.
-                        </p>
-                        <p class="mt-4 text-base font-medium leading-7 text-slate-500">
-                            Sign in with your DepEd account to continue.
-                        </p>
-                    </div>
+                    <p class="mt-6 max-w-lg text-lg font-semibold leading-8 text-slate-700">
+                        Access learning resources, teaching tools, and digital materials in one place.
+                    </p>
                 </section>
 
                 <section class="mx-auto w-full max-w-xl">

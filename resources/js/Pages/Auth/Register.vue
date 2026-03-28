@@ -24,7 +24,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head title="Crystal Portal" />
 
         <div class="mb-8">
             <p class="eyebrow">Teacher Registration</p>

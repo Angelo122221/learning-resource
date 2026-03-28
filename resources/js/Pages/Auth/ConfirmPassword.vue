@@ -19,7 +19,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Confirm Password" />
+        <Head title="Crystal Portal" />
 
         <div class="mb-8">
             <p class="eyebrow">Security Check</p>

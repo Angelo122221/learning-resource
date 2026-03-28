@@ -50,7 +50,7 @@ const deleteAccount = () => {
 
 <template>
     <AuthenticatedLayout>
-        <Head title="Profile" />
+        <Head title="Crystal Portal" />
 
         <AppPageHeader
             badge="PR"

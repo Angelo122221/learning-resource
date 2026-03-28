@@ -8,7 +8,7 @@ const page = usePage();
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Crystal Portal" />
 
     <AuthenticatedLayout>
         <AppPageHeader
