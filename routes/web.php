@@ -43,6 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Main Explorer View & New Analytics Dashboard
         Route::get('/resources', [AdminResourceController::class, 'index'])->name('admin.resources');
+        Route::get('/announcements', [AdminResourceController::class, 'announcements'])->name('admin.announcements');
+        Route::get('/carousel', [AdminResourceController::class, 'carousel'])->name('admin.carousel');
+        Route::get('/videos', [AdminResourceController::class, 'videos'])->name('admin.videos');
         Route::get('/analytics', [AdminResourceController::class, 'analytics'])->name('admin.analytics'); // NEW!
         Route::get('/resources/analytics', [AdminResourceController::class, 'analytics'])->name('admin.resources.analytics');
         Route::delete('/resources', function () {

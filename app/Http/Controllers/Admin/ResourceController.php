@@ -43,10 +43,28 @@ class ResourceController extends Controller
                 'total_users' => User::count(),
                 'total_teachers' => User::where('role', 'teacher')->count(),
             ],
-            'carouselImages' => CarouselImage::latest()->get(),
-            'featuredVideos' => FeaturedVideo::latest()->get(),
-            'announcements' => Announcement::latest()->get(),
             'uploadLimits' => $this->uploadLimits(),
+        ]);
+    }
+
+    public function announcements(): Response
+    {
+        return Inertia::render('Admin/Resources/Announcements', [
+            'announcements' => Announcement::latest()->get(),
+        ]);
+    }
+
+    public function carousel(): Response
+    {
+        return Inertia::render('Admin/Resources/Carousel', [
+            'carouselImages' => CarouselImage::latest()->get(),
+        ]);
+    }
+
+    public function videos(): Response
+    {
+        return Inertia::render('Admin/Resources/Videos', [
+            'featuredVideos' => FeaturedVideo::latest()->get(),
         ]);
     }
 

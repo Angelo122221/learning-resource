@@ -1,7 +1,6 @@
 <script setup>
 import AppDataTable from '@/Components/AppDataTable.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
-import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppSectionCard from '@/Components/AppSectionCard.vue';
 import AppStatCard from '@/Components/AppStatCard.vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
@@ -320,23 +319,16 @@ const resetFilters = () => {
     <Head title="Analytics" />
 
     <AdminLayout>
-        <AppPageHeader
-            badge="AN"
-            title="Analytics"
-            accent="Dashboard"
-            subtitle="Track usage trends, compare engagement, and filter insights by district, school, and action."
-        >
-            <template #actions>
-                <button
-                    type="button"
-                    class="action-btn-secondary"
-                    :disabled="!hasActiveFilters"
-                    @click="resetFilters"
-                >
-                    Clear Filters
-                </button>
-            </template>
-        </AppPageHeader>
+        <div class="mb-6 flex justify-end">
+            <button
+                type="button"
+                class="action-btn-secondary"
+                :disabled="!hasActiveFilters"
+                @click="resetFilters"
+            >
+                Clear Filters
+            </button>
+        </div>
 
         <div v-if="loadError" class="mb-6 rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
             {{ loadError }}
