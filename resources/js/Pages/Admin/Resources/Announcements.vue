@@ -1,5 +1,4 @@
 <script setup>
-import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppSectionCard from '@/Components/AppSectionCard.vue';
 import InputError from '@/Components/InputError.vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
@@ -115,9 +114,7 @@ const deleteAnnouncement = (announcementId) => {
                 <button type="submit" class="action-btn-primary w-full justify-center">Publish Announcement</button>
             </form>
 
-            <div class="custom-scrollbar mt-5 max-h-80 space-y-3 overflow-y-auto pr-1">
-                <AppEmptyState v-if="announcements.length === 0" title="No announcements yet" message="Published announcements will appear here." />
-
+            <div v-if="announcements.length" class="custom-scrollbar mt-5 max-h-80 space-y-3 overflow-y-auto pr-1">
                 <article v-for="announcement in announcements" :key="announcement.id" class="panel-muted border p-4">
                     <template v-if="editingAnnouncementId === announcement.id">
                         <form @submit.prevent="updateAnnouncement(announcement.id)" class="space-y-3">

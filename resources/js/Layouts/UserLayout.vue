@@ -11,6 +11,20 @@ const showingNavigationDropdown = ref(false);
 const supportEmail = 'cid.ozamiz@depedozamiz.net';
 const emailCopied = ref(false);
 const copyResetHandle = ref(null);
+const govphLinks = [
+    { label: 'GOV.PH', href: 'https://www.gov.ph/' },
+    { label: 'Open Data Portal', href: 'https://data.gov.ph/' },
+    { label: 'Official Gazette', href: 'https://www.officialgazette.gov.ph/' },
+];
+const governmentLinks = [
+    { label: 'Office of the President', href: 'https://op-proper.gov.ph/' },
+    { label: 'Office of the Vice President', href: 'https://ovp.gov.ph/' },
+    { label: 'Senate of the Philippines', href: 'https://legacy.senate.gov.ph/' },
+    { label: 'House of Representatives', href: 'https://www.congress.gov.ph/' },
+    { label: 'Supreme Court', href: 'https://sc.judiciary.gov.ph/' },
+    { label: 'Court of Appeals', href: 'https://ca.judiciary.gov.ph/' },
+    { label: 'Sandiganbayan', href: 'https://sb.judiciary.gov.ph/' },
+];
 
 const resetCopiedState = () => {
     if (copyResetHandle.value) {
@@ -62,7 +76,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="user-portal-shell min-h-screen bg-[#f5f6f8]">
+    <div class="user-portal-shell flex min-h-screen flex-col bg-[#f5f6f8]">
         <header class="user-portal-header border-b border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
             <div class="bg-[#f28c28] text-white">
                 <div class="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] sm:px-6 lg:px-8">
@@ -75,7 +89,7 @@ onBeforeUnmount(() => {
                         GovPH
                     </a>
                     <div class="flex items-center gap-2">
-                        <p class="hidden sm:block">Public learning resource portal</p>
+                        <p class="hidden sm:block">Learning resource portal</p>
                         <Link href="/logout" method="post" as="button" class="rounded-full border border-white/45 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-[#183f95] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#f28c28]">
                             Log Out
                         </Link>
@@ -196,10 +210,71 @@ onBeforeUnmount(() => {
             </div>
         </header>
 
-        <main class="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 md:py-8 lg:px-8">
+        <main class="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 md:py-8 lg:px-8">
             <AppFlashBanner tone="success" :message="flashSuccess" />
             <AppFlashBanner tone="error" :message="flashError" />
             <slot />
         </main>
+
+        <footer class="mt-8 border-t border-slate-200/80 bg-[linear-gradient(180deg,#eef3f8_0%,#e7edf5_100%)] text-slate-700">
+            <div class="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-[1160px] py-4 sm:py-5 lg:py-5">
+                    <div class="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,1.16fr)_minmax(0,0.92fr)_minmax(0,0.92fr)] md:gap-5 lg:gap-6">
+                        <section class="flex items-start gap-2.5 lg:gap-3">
+                            <img
+                                src="/images/govph-seal-footer.webp"
+                                alt=""
+                                class="mt-0.5 w-20 shrink-0 sm:w-24 lg:w-28"
+                                aria-hidden="true"
+                            />
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-blue-500">Republic of the Philippines</p>
+                                <p class="mt-1.5 text-[11px] leading-[1.25rem] text-slate-600">
+                                    All content is in the public domain unless otherwise stated.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">About GOVPH</h3>
+                            <p class="mt-1.5 text-[11px] leading-[1.25rem] text-slate-600">
+                                Learn more about the Philippine government, its structure, how government works, and the people behind it.
+                            </p>
+                            <div class="mt-2 flex flex-col gap-0.5">
+                                <a
+                                    v-for="link in govphLinks"
+                                    :key="link.href"
+                                    :href="link.href"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex w-fit items-center gap-1 text-[11px] font-semibold leading-[1.2rem] text-slate-700 transition hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                                >
+                                    <span>{{ link.label }}</span>
+                                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" aria-hidden="true">
+                                        <path d="M7.5 12.5 12.5 7.5M8.333 7.5H12.5v4.167" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Government Links</h3>
+                            <div class="mt-1.5 grid gap-0.5">
+                                <a
+                                    v-for="link in governmentLinks"
+                                    :key="link.href"
+                                    :href="link.href"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="w-fit text-[11px] font-semibold leading-[1.2rem] text-slate-700 transition hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                                >
+                                    {{ link.label }}
+                                </a>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 </template>

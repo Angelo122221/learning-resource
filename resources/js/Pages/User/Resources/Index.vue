@@ -1,5 +1,6 @@
 <script setup>
 import AppEmptyState from '@/Components/AppEmptyState.vue';
+import Modal from '@/Components/Modal.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import { Head } from '@inertiajs/vue3';
@@ -13,6 +14,10 @@ const props = defineProps({
     featuredVideos: Array,
 });
 
+const announcements = computed(() => props.announcements ?? []);
+const announcementCount = computed(() => announcements.value.length);
+const hasAnnouncements = computed(() => announcementCount.value > 0);
+const isAnnouncementsModalOpen = ref(false);
 const showcaseSlides = computed(() => props.carouselImages ?? []);
 const mainVideo = computed(() => props.featuredVideos[0] ?? null);
 const mainVideoEmbedUrl = computed(() => {
@@ -166,39 +171,7 @@ const partnerOrganizations = [
     <Head title="Crystal Portal" />
 
     <UserLayout>
-        <section class="rounded-[2rem] border-2 border-slate-200 bg-white px-4 py-6 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:px-6 md:py-8">
-            <div class="mb-6 flex items-center justify-between gap-3">
-                <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Announcements</h2>
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Latest Updates</p>
-            </div>
-
-            <AppEmptyState
-                v-if="!announcements?.length"
-                title="No announcements yet"
-                message="Announcements published by admins will appear here."
-            />
-
-            <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <article
-                    v-for="announcement in announcements"
-                    :key="announcement.id"
-                    class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
-                >
-                    <img
-                        v-if="announcement.image_path"
-                        :src="`/storage/${announcement.image_path}`"
-                        alt="Announcement image"
-                        class="mb-3 h-40 w-full rounded-xl object-cover"
-                    />
-                    <h3 class="text-base font-black text-slate-900">{{ announcement.title }}</h3>
-                    <p class="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-600">
-                        {{ announcement.content }}
-                    </p>
-                </article>
-            </div>
-        </section>
-
-        <section class="mt-10">
+        <section class="mt-2 md:mt-4">
             <div class="mb-6 text-center">
                 <h2 class="mt-3 text-3xl font-black uppercase tracking-tight text-slate-950 md:text-4xl">
                     Learning Resource Center
@@ -431,6 +404,103 @@ const partnerOrganizations = [
         </div>
     </div>
         </section>
+
+        <button
+            type="button"
+            class="fixed bottom-5 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-600 shadow-[0_12px_26px_rgba(15,23,42,0.10)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700 hover:shadow-[0_16px_30px_rgba(37,99,235,0.14)] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 active:translate-y-0 active:scale-[0.96] sm:bottom-6 sm:right-6 sm:h-[3.75rem] sm:w-[3.75rem]"
+            :aria-label="hasAnnouncements ? `Open announcements. ${announcementCount} available.` : 'Open announcements. No announcements yet.'"
+            @click="isAnnouncementsModalOpen = true"
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                aria-hidden="true"
+            >
+                <path
+                    d="M12 4.75a4.25 4.25 0 0 0-4.25 4.25v2.254c0 .72-.214 1.425-.615 2.023L5.75 15.25h12.5l-1.385-1.973a3.5 3.5 0 0 1-.615-2.023V9A4.25 4.25 0 0 0 12 4.75Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M9.5 18a2.5 2.5 0 0 0 5 0"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+
+            <span
+                v-if="hasAnnouncements"
+                class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-orange-500 px-1 text-[10px] font-black leading-none text-white shadow-[0_8px_18px_rgba(242,140,40,0.24)]"
+                aria-label="Announcement count"
+            >
+                {{ announcementCount > 9 ? '9+' : announcementCount }}
+            </span>
+        </button>
+
+        <Modal :show="isAnnouncementsModalOpen" max-width="xl" position="center" @close="isAnnouncementsModalOpen = false">
+            <div class="bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)]">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-[0.22em] text-blue-500">Announcements</p>
+                        <h2 class="mt-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Latest updates</h2>
+                        <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
+                            Stay updated with the latest announcements
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 active:scale-[0.97]"
+                        aria-label="Close announcements"
+                        @click="isAnnouncementsModalOpen = false"
+                    >
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" aria-hidden="true">
+                            <path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="max-h-[min(68vh,38rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+                    <AppEmptyState
+                        v-if="!hasAnnouncements"
+                        title="No announcements yet"
+                        message="Check back later for important updates"
+                    />
+
+                    <div v-else class="space-y-4">
+                        <article
+                            v-for="announcement in announcements"
+                            :key="announcement.id"
+                            class="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.06)]"
+                        >
+                            <img
+                                v-if="announcement.image_path"
+                                :src="`/storage/${announcement.image_path}`"
+                                alt="Announcement image"
+                                class="h-44 w-full object-cover sm:h-52"
+                            />
+                            <div class="p-4 sm:p-5">
+                                <div class="flex items-start justify-between gap-3">
+                                    <h3 class="text-base font-black text-slate-950 sm:text-lg">{{ announcement.title }}</h3>
+                                    <span class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-600">
+                                        Update
+                                    </span>
+                                </div>
+                                <p class="mt-3 whitespace-pre-line text-sm font-medium leading-6 text-slate-600">
+                                    {{ announcement.content }}
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </Modal>
     </UserLayout>
 </template>
 

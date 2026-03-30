@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\ResourceController as AdminResourceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResourceController as UserResourceController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
     if (request()->user()) {
@@ -16,14 +15,12 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Standard User Dashboard
     Route::get('/dashboard', function () {
-        // Redirect admins straight to the resource manager
         if (request()->user() && request()->user()->is_admin) {
             return redirect()->route('admin.resources');
         }
 
-        return Inertia::render('Dashboard');
+        return redirect()->route('resources.index');
     })->name('dashboard');
 
     // ----------------------------------------------------
