@@ -44,7 +44,7 @@
     }
 
     .hero-title {
-        @apply text-3xl font-black uppercase italic leading-none tracking-[-0.04em] text-slate-950 md:text-4xl;
+        @apply text-3xl font-black uppercase leading-none tracking-[-0.04em] text-slate-950 md:text-4xl;
     }
 
     .hero-accent {

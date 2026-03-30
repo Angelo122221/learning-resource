@@ -43,6 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Main Explorer View & New Analytics Dashboard
         Route::get('/resources', [AdminResourceController::class, 'index'])->name('admin.resources');
+        Route::get('/announcements', [AdminResourceController::class, 'announcements'])->name('admin.announcements');
+        Route::get('/carousel', [AdminResourceController::class, 'carousel'])->name('admin.carousel');
+        Route::get('/videos', [AdminResourceController::class, 'videos'])->name('admin.videos');
         Route::get('/analytics', [AdminResourceController::class, 'analytics'])->name('admin.analytics'); // NEW!
         Route::get('/resources/analytics', [AdminResourceController::class, 'analytics'])->name('admin.resources.analytics');
         Route::delete('/resources', function () {
@@ -67,6 +70,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/videos', [AdminResourceController::class, 'storeVideo'])->name('admin.videos.store');
         Route::patch('/videos/{video}', [AdminResourceController::class, 'updateVideo'])->name('admin.videos.update');
         Route::delete('/videos/{video}', [AdminResourceController::class, 'destroyVideo'])->name('admin.videos.destroy');
+        Route::post('/announcements', [AdminResourceController::class, 'storeAnnouncement'])->name('admin.announcements.store');
+        Route::patch('/announcements/{announcement}', [AdminResourceController::class, 'updateAnnouncement'])->name('admin.announcements.update');
+        Route::delete('/announcements/{announcement}', [AdminResourceController::class, 'destroyAnnouncement'])->name('admin.announcements.destroy');
 
         // User Management
         Route::post('/users', [AdminResourceController::class, 'storeUser'])->name('admin.users.store');

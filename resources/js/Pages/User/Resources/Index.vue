@@ -8,6 +8,7 @@ import UserFolderItem from './FolderItem.vue';
 
 const props = defineProps({
     folders: Array,
+    announcements: Array,
     carouselImages: Array,
     featuredVideos: Array,
 });
@@ -165,7 +166,39 @@ const partnerOrganizations = [
     <Head title="Crystal Portal" />
 
     <UserLayout>
-        <section>
+        <section class="rounded-[2rem] border-2 border-slate-200 bg-white px-4 py-6 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:px-6 md:py-8">
+            <div class="mb-6 flex items-center justify-between gap-3">
+                <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Announcements</h2>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Latest Updates</p>
+            </div>
+
+            <AppEmptyState
+                v-if="!announcements?.length"
+                title="No announcements yet"
+                message="Announcements published by admins will appear here."
+            />
+
+            <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <article
+                    v-for="announcement in announcements"
+                    :key="announcement.id"
+                    class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
+                >
+                    <img
+                        v-if="announcement.image_path"
+                        :src="`/storage/${announcement.image_path}`"
+                        alt="Announcement image"
+                        class="mb-3 h-40 w-full rounded-xl object-cover"
+                    />
+                    <h3 class="text-base font-black text-slate-900">{{ announcement.title }}</h3>
+                    <p class="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-600">
+                        {{ announcement.content }}
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="mt-10">
             <div class="mb-6 text-center">
                 <h2 class="mt-3 text-3xl font-black uppercase tracking-tight text-slate-950 md:text-4xl">
                     Learning Resource Center

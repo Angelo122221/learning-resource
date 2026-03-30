@@ -10,7 +10,7 @@ defineProps({
     folder: Object,
 });
 
-defineEmits(['delete', 'lock']);
+defineEmits(['delete', 'lock', 'add', 'upload']);
 
 const isOpen = ref(false);
 </script>
@@ -40,18 +40,40 @@ const isOpen = ref(false);
             <div class="flex flex-wrap gap-2" @click.stop>
                 <button
                     type="button"
-                    class="action-btn-secondary"
-                    :class="folder.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700' : ''"
-                    @click="$emit('lock', 'folder', folder.id)"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xl font-black text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    title="Add subfolder"
+                    aria-label="Add subfolder"
+                    @click="$emit('add', folder.id)"
                 >
-                    {{ folder.is_locked ? 'Unlock' : 'Lock' }}
+                    +
                 </button>
                 <button
                     type="button"
-                    class="action-btn-danger"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-lg font-black text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                    title="Upload file to this folder"
+                    aria-label="Upload file to this folder"
+                    @click="$emit('upload', folder.id)"
+                >
+                    ⤴
+                </button>
+                <button
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    :class="folder.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700 border-slate-900' : ''"
+                    :title="folder.is_locked ? 'Unlock folder' : 'Lock folder'"
+                    :aria-label="folder.is_locked ? 'Unlock folder' : 'Lock folder'"
+                    @click="$emit('lock', 'folder', folder.id)"
+                >
+                    {{ folder.is_locked ? '🔓' : '🔒' }}
+                </button>
+                <button
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-lg font-black text-red-700 transition hover:bg-red-600 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    title="Delete folder"
+                    aria-label="Delete folder"
                     @click="$emit('delete', 'folder', folder.id)"
                 >
-                    Delete
+                    🗑
                 </button>
             </div>
         </button>
@@ -63,6 +85,8 @@ const isOpen = ref(false);
                 :folder="sub"
                 @delete="(type, id) => $emit('delete', type, id)"
                 @lock="(type, id) => $emit('lock', type, id)"
+                @add="(id) => $emit('add', id)"
+                @upload="(id) => $emit('upload', id)"
             />
 
             <div
@@ -88,18 +112,22 @@ const isOpen = ref(false);
                 <div class="flex flex-wrap gap-2">
                     <button
                         type="button"
-                        class="action-btn-secondary"
-                        :class="file.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700' : ''"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        :class="file.is_locked ? 'bg-slate-900 text-white hover:bg-slate-700 border-slate-900' : ''"
+                        :title="file.is_locked ? 'Unlock file' : 'Lock file'"
+                        :aria-label="file.is_locked ? 'Unlock file' : 'Lock file'"
                         @click="$emit('lock', 'file', file.id)"
                     >
-                        {{ file.is_locked ? 'Unlock' : 'Lock' }}
+                        {{ file.is_locked ? '🔓' : '🔒' }}
                     </button>
                     <button
                         type="button"
-                        class="action-btn-danger"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-lg font-black text-red-700 transition hover:bg-red-600 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                        title="Delete file"
+                        aria-label="Delete file"
                         @click="$emit('delete', 'file', file.id)"
                     >
-                        Delete
+                        🗑
                     </button>
                 </div>
             </div>

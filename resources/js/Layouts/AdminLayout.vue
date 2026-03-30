@@ -4,9 +4,11 @@ import { Link } from '@inertiajs/vue3';
 
 const navItems = [
     { label: 'Resources', href: '/admin/resources', active: 'admin.resources' },
+    { label: 'Announcements', href: '/admin/announcements', active: 'admin.announcements' },
+    { label: 'Carousel', href: '/admin/carousel', active: 'admin.carousel' },
+    { label: 'Videos', href: '/admin/videos', active: 'admin.videos' },
     { label: 'Analytics', href: '/admin/analytics', active: 'admin.analytics' },
     { label: 'Users', href: '/admin/users', active: 'admin.users' },
-    { label: 'Profile', href: '/profile', active: 'profile.edit' },
 ];
 </script>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\CarouselImage;
 use App\Models\FeaturedVideo;
 use App\Models\Folder;
@@ -24,6 +25,7 @@ class ResourceController extends Controller
                 ->with(['files', 'childrenRecursive'])
                 ->orderBy('name', 'asc')
                 ->get(),
+            'announcements' => Announcement::latest()->limit(6)->get(),
             'carouselImages' => CarouselImage::latest()->get(),
             'featuredVideos' => FeaturedVideo::latest()->get(),
         ]);
