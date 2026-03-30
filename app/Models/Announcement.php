@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Announcement extends Model
 {
@@ -11,4 +12,9 @@ class Announcement extends Model
         'content',
         'image_path',
     ];
+
+    public function userStates(): HasMany
+    {
+        return $this->hasMany(AnnouncementUserState::class);
+    }
 }

@@ -29,6 +29,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/resources', [UserResourceController::class, 'index'])->name('resources.index');
     Route::post('/resources/folders/{folder}/open', [UserResourceController::class, 'openFolder'])->name('resources.folders.open');
     Route::get('/resources/download/{file}', [UserResourceController::class, 'download'])->name('resources.download');
+    Route::post('/resources/announcements/read-all', [UserResourceController::class, 'markAllAnnouncementsRead'])->name('resources.announcements.read-all');
+    Route::post('/resources/announcements/{announcement}/read', [UserResourceController::class, 'markAnnouncementRead'])->name('resources.announcements.read');
+    Route::post('/resources/announcements/{announcement}/dismiss', [UserResourceController::class, 'dismissAnnouncement'])->name('resources.announcements.dismiss');
 
     // PREVIEW ROUTE
     Route::get('/resources/preview/{file}', [UserResourceController::class, 'preview'])->name('resources.preview');

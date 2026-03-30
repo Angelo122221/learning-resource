@@ -39,4 +39,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ResourceTracking::class);
     }
+
+    public function announcementStates(): HasMany
+    {
+        return $this->hasMany(AnnouncementUserState::class);
+    }
 }

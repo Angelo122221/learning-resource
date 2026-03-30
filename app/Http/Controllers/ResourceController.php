@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\AnnouncementUserState;
 use App\Models\CarouselImage;
 use App\Models\FeaturedVideo;
 use App\Models\Folder;
@@ -10,6 +11,7 @@ use App\Models\ResourceFile;
 use App\Models\ResourceTracking;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -20,15 +22,68 @@ class ResourceController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        $announcementStates = $user->announcementStates()
+            ->get()
+            ->keyBy('announcement_id');
+
         return Inertia::render('User/Resources/Index', [
             'folders' => Folder::whereNull('parent_id')
                 ->with(['files', 'childrenRecursive'])
                 ->orderBy('name', 'asc')
                 ->get(),
-            'announcements' => Announcement::latest()->limit(6)->get(),
+            'announcements' => $this->buildAnnouncementPayload($announcementStates),
             'carouselImages' => CarouselImage::latest()->get(),
             'featuredVideos' => FeaturedVideo::latest()->get(),
         ]);
+    }
+
+    public function markAnnouncementRead(Request $request, Announcement $announcement): HttpResponse
+    {
+        $this->upsertAnnouncementState(
+            $request->user()->id,
+            $announcement->id,
+            ['read_at' => now()],
+        );
+
+        return response()->noContent();
+    }
+
+    public function markAllAnnouncementsRead(Request $request): HttpResponse
+    {
+        $user = $request->user();
+        $now = now();
+
+        $existingStates = $user->announcementStates()
+            ->get()
+            ->keyBy('announcement_id');
+
+        $visibleAnnouncementIds = Announcement::query()
+            ->latest()
+            ->get()
+            ->reject(fn (Announcement $announcement) => $existingStates->get($announcement->id)?->dismissed_at !== null)
+            ->pluck('id');
+
+        if ($visibleAnnouncementIds->isEmpty()) {
+            return response()->noContent();
+        }
+
+        foreach ($visibleAnnouncementIds as $announcementId) {
+            $this->upsertAnnouncementState($user->id, $announcementId, ['read_at' => $now]);
+        }
+
+        return response()->noContent();
+    }
+
+    public function dismissAnnouncement(Request $request, Announcement $announcement): HttpResponse
+    {
+        $this->upsertAnnouncementState(
+            $request->user()->id,
+            $announcement->id,
+            ['dismissed_at' => now()],
+        );
+
+        return response()->noContent();
     }
 
     public function openFolder(Folder $folder): HttpResponse
@@ -79,5 +134,40 @@ class ResourceController extends Controller
             'resource_file_id' => $file?->id,
             'action' => $action,
         ]);
+    }
+
+    private function buildAnnouncementPayload(Collection $announcementStates): Collection
+    {
+        return Announcement::query()
+            ->latest()
+            ->get()
+            ->reject(function (Announcement $announcement) use ($announcementStates) {
+                return $announcementStates->get($announcement->id)?->dismissed_at !== null;
+            })
+            ->map(function (Announcement $announcement) use ($announcementStates) {
+                $state = $announcementStates->get($announcement->id);
+
+                return [
+                    'id' => $announcement->id,
+                    'title' => $announcement->title,
+                    'content' => $announcement->content,
+                    'image_path' => $announcement->image_path,
+                    'created_at' => $announcement->created_at?->toIso8601String(),
+                    'read_at' => $state?->read_at?->toIso8601String(),
+                    'is_read' => $state?->read_at !== null,
+                ];
+            })
+            ->values();
+    }
+
+    private function upsertAnnouncementState(int $userId, int $announcementId, array $attributes): AnnouncementUserState
+    {
+        return AnnouncementUserState::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'announcement_id' => $announcementId,
+            ],
+            $attributes,
+        );
     }
 }
