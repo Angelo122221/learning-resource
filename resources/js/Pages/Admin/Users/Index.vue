@@ -69,10 +69,15 @@ const cancelEdit = () => {
 };
 
 const saveEdit = (userId) => {
-    editForm.patch(`/admin/users/${userId}`, {
-        preserveScroll: true,
-        onSuccess: () => cancelEdit(),
-    });
+    editForm
+        .transform((data) => ({
+            ...data,
+            _method: 'patch',
+        }))
+        .post(`/admin/users/${userId}`, {
+            preserveScroll: true,
+            onSuccess: () => cancelEdit(),
+        });
 };
 
 const startPasswordChange = (userId) => {
@@ -86,16 +91,23 @@ const cancelPasswordChange = () => {
 };
 
 const savePassword = (userId) => {
-    passwordForm.patch(`/admin/users/${userId}/password`, {
-        preserveScroll: true,
-        onSuccess: () => cancelPasswordChange(),
-    });
+    passwordForm
+        .transform((data) => ({
+            ...data,
+            _method: 'patch',
+        }))
+        .post(`/admin/users/${userId}/password`, {
+            preserveScroll: true,
+            onSuccess: () => cancelPasswordChange(),
+        });
 };
 
 const deleteUser = (userId) => {
     if (!confirm('Delete this account?')) return;
 
-    router.delete(`/admin/users/${userId}`, {
+    router.post(`/admin/users/${userId}`, {
+        _method: 'delete',
+    }, {
         preserveScroll: true,
     });
 };

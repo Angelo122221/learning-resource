@@ -22,6 +22,7 @@ const pendingReadIds = ref([]);
 const pendingDismissIds = ref([]);
 const isMarkingAllAnnouncementsRead = ref(false);
 const showcaseSlides = computed(() => props.carouselImages ?? []);
+const mediaUrl = (path) => `/media/${path}`;
 const mainVideo = computed(() => props.featuredVideos[0] ?? null);
 const mainVideoEmbedUrl = computed(() => {
     const link = mainVideo.value?.youtube_link;
@@ -46,6 +47,9 @@ const mainVideoEmbedUrl = computed(() => {
 });
 const activeShowcaseIndex = ref(0);
 const autoplayHandle = ref(null);
+const pressedShowcaseKey = ref(null);
+const isShowcaseHovered = ref(false);
+let showcasePressHandle = null;
 
 const wrapSlideIndex = (index) => {
     const totalSlides = showcaseSlides.value.length;
@@ -62,8 +66,7 @@ const visibleCarouselOffsets = computed(() => {
 
     if (totalSlides <= 1) return [0];
     if (totalSlides === 2) return [0, 1];
-    if (totalSlides === 3) return [-1, 0, 1];
-    if (totalSlides === 4) return [-1, 0, 1, 2];
+    if (totalSlides <= 4) return [-1, 0, 1];
 
     return [-2, -1, 0, 1, 2];
 });
@@ -78,14 +81,54 @@ const setActiveShowcase = (index) => {
     activeShowcaseIndex.value = wrapSlideIndex(index);
 };
 
-const goToNextShowcase = () => {
-    if (showcaseSlides.value.length <= 1) return;
-    setActiveShowcase(activeShowcaseIndex.value + 1);
+const resumeShowcaseAutoplayIfAllowed = () => {
+    if (!isShowcaseHovered.value) {
+        startShowcaseAutoplay();
+    }
 };
 
-const goToPreviousShowcase = () => {
+const pulseShowcaseCard = (key) => {
+    if (showcasePressHandle) {
+        clearTimeout(showcasePressHandle);
+    }
+
+    pressedShowcaseKey.value = key;
+    showcasePressHandle = setTimeout(() => {
+        pressedShowcaseKey.value = null;
+        showcasePressHandle = null;
+    }, 170);
+};
+
+const activateVisibleShowcase = (offset, key) => {
+    pulseShowcaseCard(key);
+
+    if (offset === 0) {
+        resumeShowcaseAutoplayIfAllowed();
+        return;
+    }
+
+    setActiveShowcase(activeShowcaseIndex.value + offset);
+    resumeShowcaseAutoplayIfAllowed();
+};
+
+const goToNextShowcase = (options = {}) => {
     if (showcaseSlides.value.length <= 1) return;
+
+    setActiveShowcase(activeShowcaseIndex.value + 1);
+
+    if (options.restartAutoplay) {
+        resumeShowcaseAutoplayIfAllowed();
+    }
+};
+
+const goToPreviousShowcase = (options = {}) => {
+    if (showcaseSlides.value.length <= 1) return;
+
     setActiveShowcase(activeShowcaseIndex.value - 1);
+
+    if (options.restartAutoplay) {
+        resumeShowcaseAutoplayIfAllowed();
+    }
 };
 
 const stopShowcaseAutoplay = () => {
@@ -107,24 +150,46 @@ const startShowcaseAutoplay = () => {
     }, 4000);
 };
 
+const handleShowcaseMouseEnter = () => {
+    isShowcaseHovered.value = true;
+    stopShowcaseAutoplay();
+};
+
+const handleShowcaseMouseLeave = () => {
+    isShowcaseHovered.value = false;
+    startShowcaseAutoplay();
+};
+
 const getDesktopCarouselCardClass = (offset) => {
     if (offset === 0) {
-        return 'z-30 left-1/2 top-1/2 h-[23rem] w-[17rem] -translate-x-1/2 -translate-y-1/2 scale-100 opacity-100';
+        return 'z-30 left-1/2 top-[46%] h-[28.5rem] w-[19.25rem] -translate-x-1/2 -translate-y-1/2 scale-[1.02] opacity-100';
     }
 
     if (offset === -1) {
-        return 'z-20 left-[28%] top-1/2 h-[19rem] w-[14rem] -translate-x-1/2 -translate-y-1/2 scale-[0.94] opacity-100';
+        return 'z-20 left-[28.5%] top-[46%] h-[24rem] w-[15.25rem] -translate-x-1/2 -translate-y-1/2 scale-[0.87] opacity-100';
     }
 
     if (offset === 1) {
-        return 'z-20 left-[72%] top-1/2 h-[19rem] w-[14rem] -translate-x-1/2 -translate-y-1/2 scale-[0.94] opacity-100';
+        return 'z-20 left-[71.5%] top-[46%] h-[24rem] w-[15.25rem] -translate-x-1/2 -translate-y-1/2 scale-[0.87] opacity-100';
     }
 
     if (offset === -2) {
-        return 'z-10 left-[8%] top-1/2 h-[15rem] w-[10.5rem] -translate-x-1/2 -translate-y-1/2 scale-[0.84] opacity-80';
+        return 'z-10 left-[10.5%] top-[46%] h-[22rem] w-[13.9rem] -translate-x-1/2 -translate-y-1/2 scale-[0.82] opacity-100';
     }
 
-    return 'z-10 left-[92%] top-1/2 h-[15rem] w-[10.5rem] -translate-x-1/2 -translate-y-1/2 scale-[0.84] opacity-80';
+    return 'z-10 left-[89.5%] top-[46%] h-[22rem] w-[13.9rem] -translate-x-1/2 -translate-y-1/2 scale-[0.82] opacity-100';
+};
+
+const getDesktopCarouselImageClass = (offset) => {
+    if (offset === 0) {
+        return 'brightness-100';
+    }
+
+    if (Math.abs(offset) === 1) {
+        return 'brightness-[0.7]';
+    }
+
+    return 'brightness-[0.58]';
 };
 
 watch(
@@ -148,6 +213,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     stopShowcaseAutoplay();
+
+    if (showcasePressHandle) {
+        clearTimeout(showcasePressHandle);
+    }
 });
 
 const announcementDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -333,11 +402,38 @@ const partnerOrganizations = [
     <Head title="Crystal Portal" />
 
     <UserLayout>
-        <section class="mt-2 md:mt-4">
-            <div class="mb-6 text-center">
-                <h2 class="mt-3 text-3xl font-black uppercase tracking-tight text-slate-950 md:text-4xl">
-                    Learning Resource Center
-                </h2>
+        <section class="relative isolate -mt-2 md:-mt-3">
+            <div class="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 overflow-hidden" aria-hidden="true">
+                <div class="absolute inset-x-0 top-0 h-[46%] bg-[radial-gradient(circle_at_50%_18%,rgba(191,219,254,0.52)_0%,rgba(219,234,254,0.26)_34%,rgba(255,255,255,0)_72%)]" />
+
+                <svg
+                    class="absolute inset-x-0 top-[20%] h-[50%] w-full md:top-[18%] md:h-[54%]"
+                    viewBox="0 0 1440 420"
+                    preserveAspectRatio="none"
+                >
+                    <defs>
+                        <linearGradient id="learning-resource-wave-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#0057ff" />
+                            <stop offset="48%" stop-color="#006dff" />
+                            <stop offset="100%" stop-color="#0043d6" />
+                        </linearGradient>
+                        <linearGradient id="learning-resource-wave-orange" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ff9f1a" />
+                            <stop offset="42%" stop-color="#ff8c00" />
+                            <stop offset="76%" stop-color="#ff7400" />
+                            <stop offset="100%" stop-color="#ff9812" />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        d="M0 188C114 226 236 222 361 168C486 113 602 28 732 32C874 36 992 152 1115 211C1223 262 1334 263 1440 220L1440 252C1328 278 1214 274 1091 239C965 206 855 101 732 90C604 80 490 165 364 224C239 278 117 276 0 226Z"
+                        fill="url(#learning-resource-wave-blue)"
+                    />
+                    <path
+                        d="M0 226C117 276 239 278 364 224C490 165 604 80 732 90C855 101 965 206 1091 239C1214 274 1328 278 1440 252L1440 304C1327 329 1213 333 1088 320C963 289 853 220 732 223C604 226 490 290 363 334C239 377 118 362 0 302Z"
+                        fill="url(#learning-resource-wave-orange)"
+                        fill-opacity="0.72"
+                    />
+                </svg>
             </div>
 
             <AppEmptyState
@@ -348,108 +444,90 @@ const partnerOrganizations = [
 
             <div
                 v-else
-                class="rounded-[2.25rem] bg-[linear-gradient(180deg,#fbfcfe_0%,#eef3ff_100%)] px-4 py-6 shadow-[0_24px_60px_rgba(37,99,235,0.08)] sm:px-6 md:px-8 md:py-8"
-                @mouseenter="stopShowcaseAutoplay"
-                @mouseleave="startShowcaseAutoplay"
+                class="relative z-10 mt-2 md:mt-3"
+                @mouseenter="handleShowcaseMouseEnter"
+                @mouseleave="handleShowcaseMouseLeave"
             >
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Auto-playing carousel</p>
-                        <p class="mt-2 text-sm font-medium text-slate-500">
-                            Featured books move every 4 seconds. Use the arrows or dots to browse manually.
-                        </p>
-                    </div>
-
-                    <div class="hidden items-center gap-2 md:flex">
-                        <button
-                            type="button"
-                            class="action-btn-secondary !rounded-full !px-4"
-                            aria-label="Previous featured book"
-                            @click="goToPreviousShowcase"
-                        >
-                            Prev
-                        </button>
-                        <button
-                            type="button"
-                            class="action-btn-primary !rounded-full !px-4"
-                            aria-label="Next featured book"
-                            @click="goToNextShowcase"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mt-6 md:hidden">
+                <div class="relative pt-1 md:hidden">
                     <article
                         v-if="showcaseSlides[activeShowcaseIndex]"
-                        class="mx-auto max-w-[20rem] overflow-hidden rounded-[1.9rem] border-2 border-white/80 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.12)]"
+                        class="mx-auto max-w-[20.5rem] overflow-hidden rounded-[0.85rem] border border-white/70 bg-white"
                     >
-                        <img
-                            :src="`/storage/${showcaseSlides[activeShowcaseIndex].image_path}`"
-                            :alt="showcaseSlides[activeShowcaseIndex].title"
-                            class="h-[22rem] w-full object-cover"
-                        />
-                        <div class="border-t border-slate-100 px-4 py-4">
-                            <p class="line-clamp-2 text-center text-sm font-black uppercase tracking-tight text-slate-900">
-                                {{ showcaseSlides[activeShowcaseIndex].title }}
-                            </p>
+                        <div class="relative">
+                            <img
+                                :src="mediaUrl(showcaseSlides[activeShowcaseIndex].image_path)"
+                                :alt="showcaseSlides[activeShowcaseIndex].title"
+                                class="h-[23.5rem] w-full object-cover"
+                            />
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/82 via-slate-950/42 to-transparent px-4 pb-5 pt-16">
+                                <p class="line-clamp-2 text-sm font-black uppercase tracking-[0.12em] text-white">
+                                    {{ showcaseSlides[activeShowcaseIndex].title }}
+                                </p>
+                            </div>
                         </div>
                     </article>
                 </div>
 
-                <div class="relative mt-6 hidden h-[27rem] overflow-hidden md:block">
-                    <article
+                <div class="relative hidden h-[31.5rem] overflow-hidden md:block">
+                    <button
                         v-for="item in visibleCarouselSlides"
                         :key="item.key"
-                        class="absolute overflow-hidden rounded-[2rem] border-2 border-white/85 bg-white shadow-[0_24px_52px_rgba(15,23,42,0.14)] transition-all duration-700 ease-out"
+                        type="button"
+                        class="group absolute overflow-hidden rounded-[0.9rem] border border-white/80 bg-white text-left transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4"
                         :class="getDesktopCarouselCardClass(item.offset)"
+                        :aria-label="`Show featured book ${item.slide.title}`"
+                        @click="activateVisibleShowcase(item.offset, item.key)"
                     >
-                        <div class="absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b from-slate-950/16 to-transparent" />
-                        <img
-                            :src="`/storage/${item.slide.image_path}`"
-                            :alt="item.slide.title"
-                            class="h-full w-full object-cover"
-                        />
-                        <div
-                            v-if="item.offset === 0"
-                            class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/92 to-transparent px-5 pb-5 pt-16"
-                        >
-                            <p class="line-clamp-2 text-center text-base font-black uppercase tracking-tight text-slate-900">
-                                {{ item.slide.title }}
-                            </p>
-                    </div>
-                </article>
-                </div>
-
-                <div class="mt-6 flex items-center justify-center gap-2">
-                    <button
-                        v-for="(slide, index) in showcaseSlides"
-                        :key="slide.id"
-                        type="button"
-                        class="h-3 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        :class="index === activeShowcaseIndex ? 'w-10 bg-blue-600' : 'w-3 bg-slate-300 hover:bg-slate-400'"
-                        :aria-label="`Go to featured book ${index + 1}`"
-                        @click="setActiveShowcase(index)"
-                    />
-                </div>
-
-                <div class="mt-5 flex items-center justify-center gap-2 md:hidden">
-                    <button
-                        type="button"
-                        class="action-btn-secondary !rounded-full !px-4"
-                        aria-label="Previous featured book"
-                        @click="goToPreviousShowcase"
-                    >
-                        Prev
+                        <div class="h-full w-full transition-transform duration-150 ease-out" :class="pressedShowcaseKey === item.key ? 'scale-[0.97]' : ''">
+                            <img
+                                :src="mediaUrl(item.slide.image_path)"
+                                :alt="item.slide.title"
+                                class="h-full w-full object-cover transition-[filter] duration-300"
+                                :class="getDesktopCarouselImageClass(item.offset)"
+                            />
+                            <div class="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-slate-950/82 via-slate-950/28 to-transparent px-5 pb-5 pt-20 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                                <p class="line-clamp-2 text-sm font-black uppercase tracking-[0.12em] text-white">
+                                    {{ item.slide.title }}
+                                </p>
+                            </div>
+                        </div>
                     </button>
+                </div>
+
+                <div v-if="showcaseSlides.length > 1" class="relative -mt-6 flex items-center justify-center gap-3 md:-mt-6 md:gap-4">
                     <button
                         type="button"
-                        class="action-btn-primary !rounded-full !px-4"
-                        aria-label="Next featured book"
-                        @click="goToNextShowcase"
+                        class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/96 text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        aria-label="Previous featured book"
+                        @click="goToPreviousShowcase({ restartAutoplay: true })"
                     >
-                        Next
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M11.75 4.5 6.25 10l5.5 5.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+                        </svg>
+                    </button>
+
+                    <div class="flex items-center justify-center gap-2 rounded-full border border-slate-200/70 bg-white/96 px-4 py-3">
+                        <button
+                            v-for="(slide, index) in showcaseSlides"
+                            :key="slide.id"
+                            type="button"
+                            class="h-2.5 w-2.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                            :class="index === activeShowcaseIndex ? 'scale-125 bg-slate-950 shadow-[0_0_0_6px_rgba(59,130,246,0.14)]' : 'bg-slate-300 hover:bg-slate-400'"
+                            :aria-label="`Go to featured book ${index + 1}`"
+                            :aria-current="index === activeShowcaseIndex ? 'true' : 'false'"
+                            @click="setActiveShowcase(index); resumeShowcaseAutoplayIfAllowed()"
+                        />
+                    </div>
+
+                    <button
+                        type="button"
+                        class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/96 text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        aria-label="Next featured book"
+                        @click="goToNextShowcase({ restartAutoplay: true })"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M8.25 4.5 13.75 10l-5.5 5.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -660,7 +738,7 @@ const partnerOrganizations = [
                         >
                             <img
                                 v-if="announcement.image_path"
-                                :src="`/storage/${announcement.image_path}`"
+                                :src="mediaUrl(announcement.image_path)"
                                 :alt="announcement.title"
                                 class="h-44 w-full object-cover sm:h-52"
                             />

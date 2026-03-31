@@ -144,6 +144,18 @@ class AdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_authenticated_user_can_access_public_disk_media_through_media_route(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+        Storage::disk('public')->put('carousel/test-slide.jpg', 'fake-image-content');
+
+        $this->actingAs($admin)
+            ->get('/media/carousel/test-slide.jpg')
+            ->assertOk();
+    }
+
     public function test_admin_can_create_update_and_delete_featured_videos(): void
     {
         $admin = $this->createAdminUser();
@@ -393,6 +405,28 @@ class AdminManagementTest extends TestCase
                 'X-Requested-With' => 'XMLHttpRequest',
             ])
             ->delete("/admin/announcements/{$announcement->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/announcements');
+
+        $this->assertDatabaseMissing('announcements', [
+            'id' => $announcement->id,
+        ]);
+    }
+
+    public function test_announcement_delete_accepts_method_spoofed_post_requests(): void
+    {
+        $admin = $this->createAdminUser();
+
+        $announcement = Announcement::create([
+            'title' => 'Delete me with spoofing',
+            'content' => 'This announcement should be deleted through a POST request.',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/announcements')
+            ->post("/admin/announcements/{$announcement->id}", [
+                '_method' => 'delete',
+            ])
             ->assertStatus(303)
             ->assertRedirect('/admin/announcements');
 

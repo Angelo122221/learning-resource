@@ -32,19 +32,34 @@ const deleteForm = useForm({
 });
 
 const updateProfile = () => {
-    profileForm.patch(route('profile.update'));
+    profileForm
+        .transform((data) => ({
+            ...data,
+            _method: 'patch',
+        }))
+        .post(route('profile.update'));
 };
 
 const updatePassword = () => {
-    passwordForm.put(route('password.update'), {
-        onSuccess: () => passwordForm.reset(),
-    });
+    passwordForm
+        .transform((data) => ({
+            ...data,
+            _method: 'put',
+        }))
+        .post(route('password.update'), {
+            onSuccess: () => passwordForm.reset(),
+        });
 };
 
 const deleteAccount = () => {
     if (!confirm('Delete your account permanently?')) return;
 
-    deleteForm.delete(route('profile.destroy'));
+    deleteForm
+        .transform((data) => ({
+            ...data,
+            _method: 'delete',
+        }))
+        .post(route('profile.destroy'));
 };
 </script>
 

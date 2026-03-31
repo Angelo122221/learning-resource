@@ -184,7 +184,7 @@ const deleteItem = (type, id) => {
         return;
     }
 
-    router.delete(path, { preserveScroll: true });
+    router.post(path, { _method: 'delete' }, { preserveScroll: true });
 };
 
 const toggleLock = (type, id) => {
@@ -194,7 +194,7 @@ const toggleLock = (type, id) => {
         return;
     }
 
-    router.patch(path, {}, { preserveScroll: true });
+    router.post(path, { _method: 'patch' }, { preserveScroll: true });
 };
 </script>
 

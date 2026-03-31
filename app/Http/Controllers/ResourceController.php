@@ -122,6 +122,22 @@ class ResourceController extends Controller
         return response()->file(Storage::disk('public')->path($file->file_path));
     }
 
+    public function media(string $path): BinaryFileResponse
+    {
+        $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+
+        abort_if(
+            $normalizedPath === ''
+            || str_contains($normalizedPath, '../')
+            || str_contains($normalizedPath, '..\\'),
+            404
+        );
+
+        abort_unless(Storage::disk('public')->exists($normalizedPath), 404);
+
+        return response()->file(Storage::disk('public')->path($normalizedPath));
+    }
+
     private function trackAction(string $action, ?Folder $folder, ?ResourceFile $file): void
     {
         if (! Auth::check()) {

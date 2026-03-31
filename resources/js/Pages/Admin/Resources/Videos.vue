@@ -55,16 +55,23 @@ const cancelEditVideo = () => {
 };
 
 const updateVideo = (videoId) => {
-    videoEditForm.patch(`/admin/videos/${videoId}`, {
-        preserveScroll: true,
-        onSuccess: () => cancelEditVideo(),
-    });
+    videoEditForm
+        .transform((data) => ({
+            ...data,
+            _method: 'patch',
+        }))
+        .post(`/admin/videos/${videoId}`, {
+            preserveScroll: true,
+            onSuccess: () => cancelEditVideo(),
+        });
 };
 
 const deleteVideo = (videoId) => {
     if (!confirm('Delete this featured video?')) return;
 
-    router.delete(`/admin/videos/${videoId}`, {
+    router.post(`/admin/videos/${videoId}`, {
+        _method: 'delete',
+    }, {
         preserveScroll: true,
     });
 };

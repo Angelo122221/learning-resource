@@ -27,6 +27,7 @@ const carouselEditForm = useForm({
 const editingCarouselId = ref(null);
 const showCarouselModal = ref(false);
 const carouselFileInput = ref(null);
+const mediaUrl = (path) => `/media/${path}`;
 
 const openCarouselModal = () => {
     showCarouselModal.value = true;
@@ -73,7 +74,9 @@ const updateCarousel = (carouselId) => {
 const deleteCarousel = (carouselId) => {
     if (!confirm('Delete this carousel image?')) return;
 
-    router.delete(`/admin/carousel/${carouselId}`, {
+    router.post(`/admin/carousel/${carouselId}`, {
+        _method: 'delete',
+    }, {
         preserveScroll: true,
     });
 };
@@ -94,7 +97,7 @@ const deleteCarousel = (carouselId) => {
                 <AppEmptyState v-if="carouselImages.length === 0" title="No slides yet" message="Add the first slide using the button above." />
 
                 <div v-for="carousel in carouselImages" :key="carousel.id" class="panel-muted overflow-hidden border p-3">
-                    <img :src="`/storage/${carousel.image_path}`" class="mb-3 h-40 w-full rounded-xl object-cover" alt="Carousel image" />
+                    <img :src="mediaUrl(carousel.image_path)" class="mb-3 h-40 w-full rounded-xl object-cover" alt="Carousel image" />
 
                     <template v-if="editingCarouselId === carousel.id">
                         <form @submit.prevent="updateCarousel(carousel.id)" class="space-y-3">
@@ -117,7 +120,7 @@ const deleteCarousel = (carouselId) => {
                     <template v-else>
                         <p class="text-sm font-black text-slate-900">{{ carousel.title }}</p>
                         <div class="mt-3 flex flex-wrap gap-2">
-                            <a :href="`/storage/${carousel.image_path}`" target="_blank" class="action-btn-secondary">View</a>
+                            <a :href="mediaUrl(carousel.image_path)" target="_blank" class="action-btn-secondary">View</a>
                             <button type="button" class="action-btn-secondary" @click="startEditCarousel(carousel)">Edit</button>
                             <button type="button" class="action-btn-danger" @click="deleteCarousel(carousel.id)">Delete</button>
                         </div>

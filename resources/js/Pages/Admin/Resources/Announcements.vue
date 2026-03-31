@@ -27,6 +27,7 @@ const announcementEditForm = useForm({
 
 const editingAnnouncementId = ref(null);
 const announcementFileInput = ref(null);
+const mediaUrl = (path) => `/media/${path}`;
 
 const submitAnnouncement = () => {
     announcementForm.post('/admin/announcements', {
@@ -68,7 +69,9 @@ const updateAnnouncement = (announcementId) => {
 const deleteAnnouncement = (announcementId) => {
     if (!confirm('Delete this announcement?')) return;
 
-    router.delete(`/admin/announcements/${announcementId}`, {
+    router.post(`/admin/announcements/${announcementId}`, {
+        _method: 'delete',
+    }, {
         preserveScroll: true,
     });
 };
@@ -143,7 +146,7 @@ const deleteAnnouncement = (announcementId) => {
                     <template v-else>
                         <img
                             v-if="announcement.image_path"
-                            :src="`/storage/${announcement.image_path}`"
+                            :src="mediaUrl(announcement.image_path)"
                             alt="Announcement image"
                             class="mb-3 h-40 w-full rounded-xl object-cover"
                         />

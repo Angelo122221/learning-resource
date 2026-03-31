@@ -14,6 +14,9 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/media/{path}', [UserResourceController::class, 'media'])
+        ->where('path', '.*')
+        ->name('media.show');
 
     Route::get('/dashboard', function () {
         if (request()->user() && request()->user()->is_admin) {
