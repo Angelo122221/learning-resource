@@ -76,7 +76,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="user-portal-shell flex min-h-screen flex-col bg-[#f5f6f8]">
+    <div class="user-portal-shell flex min-h-screen flex-col overflow-x-hidden bg-[#f5f6f8]">
         <header class="user-portal-header border-b border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
             <div class="bg-[#f28c28] text-white">
                 <div class="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] sm:px-6 lg:px-8">

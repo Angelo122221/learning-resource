@@ -24,6 +24,21 @@ const isMarkingAllAnnouncementsRead = ref(false);
 const showcaseSlides = computed(() => props.carouselImages ?? []);
 const mediaUrl = (path) => `/media/${path}`;
 const mainVideo = computed(() => props.featuredVideos[0] ?? null);
+const featuredVideoSection = ref(null);
+const featuredVideoIframe = ref(null);
+let featuredVideoObserver = null;
+
+const createYoutubeEmbedUrl = (videoId) => {
+    if (!videoId) {
+        return '';
+    }
+
+    const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
+    embedUrl.searchParams.set('enablejsapi', '1');
+
+    return embedUrl.toString();
+};
+
 const mainVideoEmbedUrl = computed(() => {
     const link = mainVideo.value?.youtube_link;
 
@@ -36,11 +51,21 @@ const mainVideoEmbedUrl = computed(() => {
 
         if (parsedUrl.hostname.includes('youtu.be')) {
             const videoId = parsedUrl.pathname.split('/').filter(Boolean)[0];
-            return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+            return createYoutubeEmbedUrl(videoId);
+        }
+
+        if (parsedUrl.pathname.startsWith('/embed/')) {
+            const videoId = parsedUrl.pathname.split('/').filter(Boolean)[1];
+            return createYoutubeEmbedUrl(videoId);
+        }
+
+        if (parsedUrl.pathname.startsWith('/shorts/')) {
+            const videoId = parsedUrl.pathname.split('/').filter(Boolean)[1];
+            return createYoutubeEmbedUrl(videoId);
         }
 
         const videoId = parsedUrl.searchParams.get('v');
-        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        return createYoutubeEmbedUrl(videoId);
     } catch {
         return '';
     }
@@ -49,7 +74,32 @@ const activeShowcaseIndex = ref(0);
 const autoplayHandle = ref(null);
 const pressedShowcaseKey = ref(null);
 const isShowcaseHovered = ref(false);
+const blueWaveBackLeftAnimation = ref(null);
+const blueWaveBackRightAnimation = ref(null);
+const blueWaveGlowLeftAnimation = ref(null);
+const blueWaveGlowRightAnimation = ref(null);
+const blueWaveLeftAnimation = ref(null);
+const blueWaveRightAnimation = ref(null);
+const orangeWaveBackLeftAnimation = ref(null);
+const orangeWaveBackRightAnimation = ref(null);
+const orangeWaveGlowLeftAnimation = ref(null);
+const orangeWaveGlowRightAnimation = ref(null);
+const orangeWaveLeftAnimation = ref(null);
+const orangeWaveRightAnimation = ref(null);
 let showcasePressHandle = null;
+let showcaseWaveTrailHandle = null;
+const secondaryBlueWavePath = 'M0 204C118 232 238 224 362 160C484 90 606 6 732 12C868 18 990 140 1112 198C1222 248 1332 252 1440 228L1440 250C1330 270 1216 266 1092 230C964 196 850 110 728 112C604 116 486 198 362 236C238 274 118 272 0 236Z';
+const baseBlueWavePath = 'M0 192C116 220 236 210 360 138C482 62 604 -24 732 -18C872 -10 992 124 1114 188C1224 240 1334 247 1440 218L1440 256C1330 278 1214 274 1090 238C964 204 852 108 732 102C608 96 490 184 364 228C238 272 116 270 0 228Z';
+const secondaryLeftBlueWavePath = 'M0 204C118 218 236 198 352 128C472 44 596 -34 722 -4C860 28 984 154 1110 204C1220 250 1332 254 1440 228L1440 250C1330 268 1218 262 1094 224C964 188 848 104 724 124C596 144 476 228 350 256C230 284 114 280 0 236Z';
+const leftBlueWavePath = 'M0 192C116 204 234 184 350 108C470 20 596 -58 718 -30C854 -2 980 140 1110 194C1222 242 1334 249 1440 218L1440 256C1330 276 1216 272 1092 232C962 196 848 110 724 116C594 124 472 210 348 246C226 284 112 280 0 228Z';
+const secondaryRightBlueWavePath = 'M0 204C118 236 240 230 366 172C490 108 614 34 746 0C886 -30 1010 118 1136 192C1242 244 1344 250 1440 228L1440 250C1330 274 1214 270 1088 236C958 202 842 118 722 100C602 82 488 166 368 220C244 272 120 274 0 236Z';
+const rightBlueWavePath = 'M0 192C116 226 238 218 364 150C486 84 610 4 742 -20C882 -46 1008 104 1136 180C1244 236 1344 245 1440 218L1440 256C1330 280 1214 278 1088 244C958 210 842 122 720 104C598 86 482 168 360 220C236 270 116 270 0 228Z';
+const secondaryOrangeWavePath = 'M0 236C118 276 240 278 364 238C490 198 608 116 728 112C850 110 964 196 1092 230C1216 266 1330 270 1440 250L1440 310C1328 336 1216 344 1090 338C962 312 850 256 728 266C604 278 490 340 364 360C240 378 120 364 0 302Z';
+const baseOrangeWavePath = 'M0 228C116 270 238 272 364 228C490 184 608 96 732 102C852 108 964 204 1090 238C1214 274 1330 278 1440 256L1440 332C1328 366 1214 374 1088 366C962 338 852 276 732 284C608 292 492 358 364 382C240 404 118 386 0 290Z';
+const secondaryLeftOrangeWavePath = 'M0 236C118 282 240 286 366 250C490 214 606 132 724 124C848 104 964 188 1094 224C1218 262 1330 268 1440 250L1440 304C1328 328 1218 336 1092 332C964 308 850 264 724 282C598 300 478 356 352 374C230 390 114 374 0 302Z';
+const leftOrangeWavePath = 'M0 228C116 282 238 286 364 242C488 198 606 112 724 116C848 120 962 196 1092 232C1216 272 1330 276 1440 256L1440 320C1328 350 1218 358 1092 350C964 324 850 266 724 286C594 308 474 386 350 402C226 418 112 386 0 290Z';
+const secondaryRightOrangeWavePath = 'M0 236C118 276 242 274 368 230C488 186 602 82 722 100C842 118 958 202 1088 236C1214 270 1330 274 1440 250L1440 322C1328 354 1216 364 1090 358C962 334 848 284 722 280C602 276 490 330 366 352C242 374 120 364 0 302Z';
+const rightOrangeWavePath = 'M0 228C116 270 236 270 360 220C482 168 598 86 720 104C842 122 958 210 1088 244C1214 278 1330 280 1440 256L1440 344C1330 388 1218 398 1092 394C958 364 844 286 720 278C602 270 486 342 364 374C240 404 118 388 0 290Z';
 
 const wrapSlideIndex = (index) => {
     const totalSlides = showcaseSlides.value.length;
@@ -99,6 +149,73 @@ const pulseShowcaseCard = (key) => {
     }, 170);
 };
 
+const clearShowcaseWaveTrail = () => {
+    if (showcaseWaveTrailHandle) {
+        clearTimeout(showcaseWaveTrailHandle);
+        showcaseWaveTrailHandle = null;
+    }
+};
+
+const triggerShowcaseWaveMotion = (direction) => {
+    clearShowcaseWaveTrail();
+
+    if (direction === 'left') {
+        blueWaveLeftAnimation.value?.beginElement();
+        orangeWaveLeftAnimation.value?.beginElement();
+        showcaseWaveTrailHandle = setTimeout(() => {
+            blueWaveBackLeftAnimation.value?.beginElement();
+            orangeWaveBackLeftAnimation.value?.beginElement();
+            blueWaveGlowLeftAnimation.value?.beginElement();
+            orangeWaveGlowLeftAnimation.value?.beginElement();
+            showcaseWaveTrailHandle = null;
+        }, 120);
+        return;
+    }
+
+    if (direction === 'right') {
+        blueWaveRightAnimation.value?.beginElement();
+        orangeWaveRightAnimation.value?.beginElement();
+        showcaseWaveTrailHandle = setTimeout(() => {
+            blueWaveBackRightAnimation.value?.beginElement();
+            orangeWaveBackRightAnimation.value?.beginElement();
+            blueWaveGlowRightAnimation.value?.beginElement();
+            orangeWaveGlowRightAnimation.value?.beginElement();
+            showcaseWaveTrailHandle = null;
+        }, 120);
+    }
+};
+
+const getShowcaseDirectionForIndex = (targetIndex) => {
+    const totalSlides = showcaseSlides.value.length;
+
+    if (totalSlides <= 1) {
+        return null;
+    }
+
+    const normalizedTargetIndex = wrapSlideIndex(targetIndex);
+    const currentIndex = activeShowcaseIndex.value;
+
+    if (normalizedTargetIndex === currentIndex) {
+        return null;
+    }
+
+    const forwardSteps = (normalizedTargetIndex - currentIndex + totalSlides) % totalSlides;
+    const backwardSteps = (currentIndex - normalizedTargetIndex + totalSlides) % totalSlides;
+
+    return forwardSteps <= backwardSteps ? 'right' : 'left';
+};
+
+const handleShowcaseDotClick = (index) => {
+    const direction = getShowcaseDirectionForIndex(index);
+
+    if (direction) {
+        triggerShowcaseWaveMotion(direction);
+    }
+
+    setActiveShowcase(index);
+    resumeShowcaseAutoplayIfAllowed();
+};
+
 const activateVisibleShowcase = (offset, key) => {
     pulseShowcaseCard(key);
 
@@ -107,12 +224,17 @@ const activateVisibleShowcase = (offset, key) => {
         return;
     }
 
+    triggerShowcaseWaveMotion(offset > 0 ? 'right' : 'left');
     setActiveShowcase(activeShowcaseIndex.value + offset);
     resumeShowcaseAutoplayIfAllowed();
 };
 
 const goToNextShowcase = (options = {}) => {
     if (showcaseSlides.value.length <= 1) return;
+
+    if (options.triggerWaveMotion) {
+        triggerShowcaseWaveMotion('right');
+    }
 
     setActiveShowcase(activeShowcaseIndex.value + 1);
 
@@ -123,6 +245,10 @@ const goToNextShowcase = (options = {}) => {
 
 const goToPreviousShowcase = (options = {}) => {
     if (showcaseSlides.value.length <= 1) return;
+
+    if (options.triggerWaveMotion) {
+        triggerShowcaseWaveMotion('left');
+    }
 
     setActiveShowcase(activeShowcaseIndex.value - 1);
 
@@ -158,6 +284,54 @@ const handleShowcaseMouseEnter = () => {
 const handleShowcaseMouseLeave = () => {
     isShowcaseHovered.value = false;
     startShowcaseAutoplay();
+};
+
+const pauseFeaturedVideo = () => {
+    const playerWindow = featuredVideoIframe.value?.contentWindow;
+
+    if (!playerWindow) {
+        return;
+    }
+
+    playerWindow.postMessage(JSON.stringify({
+        event: 'command',
+        func: 'pauseVideo',
+        args: [],
+    }), 'https://www.youtube.com');
+};
+
+const stopObservingFeaturedVideo = () => {
+    if (featuredVideoObserver) {
+        featuredVideoObserver.disconnect();
+        featuredVideoObserver = null;
+    }
+};
+
+const startObservingFeaturedVideo = () => {
+    stopObservingFeaturedVideo();
+
+    if (!featuredVideoSection.value || !mainVideoEmbedUrl.value) {
+        return;
+    }
+
+    featuredVideoObserver = new IntersectionObserver(
+        ([entry]) => {
+            if (!entry?.isIntersecting) {
+                pauseFeaturedVideo();
+            }
+        },
+        {
+            threshold: 0.05,
+        },
+    );
+
+    featuredVideoObserver.observe(featuredVideoSection.value);
+};
+
+const handlePageVisibilityChange = () => {
+    if (document.hidden) {
+        pauseFeaturedVideo();
+    }
 };
 
 const getDesktopCarouselCardClass = (offset) => {
@@ -207,12 +381,24 @@ watch(
     { immediate: true },
 );
 
+watch(
+    () => mainVideoEmbedUrl.value,
+    () => {
+        startObservingFeaturedVideo();
+    },
+);
+
 onMounted(() => {
     startShowcaseAutoplay();
+    startObservingFeaturedVideo();
+    document.addEventListener('visibilitychange', handlePageVisibilityChange);
 });
 
 onBeforeUnmount(() => {
     stopShowcaseAutoplay();
+    stopObservingFeaturedVideo();
+    document.removeEventListener('visibilitychange', handlePageVisibilityChange);
+    clearShowcaseWaveTrail();
 
     if (showcasePressHandle) {
         clearTimeout(showcasePressHandle);
@@ -407,32 +593,189 @@ const partnerOrganizations = [
                 <div class="absolute inset-x-0 top-0 h-[46%] bg-[radial-gradient(circle_at_50%_18%,rgba(191,219,254,0.52)_0%,rgba(219,234,254,0.26)_34%,rgba(255,255,255,0)_72%)]" />
 
                 <svg
-                    class="absolute inset-x-0 top-[20%] h-[50%] w-full md:top-[18%] md:h-[54%]"
+                    class="absolute inset-x-0 top-[20%] h-[50%] w-full scale-[1.005] blur-[3px] md:top-[18%] md:h-[54%] md:blur-[4px]"
                     viewBox="0 0 1440 420"
                     preserveAspectRatio="none"
                 >
                     <defs>
                         <linearGradient id="learning-resource-wave-blue" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#0057ff" />
-                            <stop offset="48%" stop-color="#006dff" />
-                            <stop offset="100%" stop-color="#0043d6" />
+                            <stop offset="0%" stop-color="#123499" />
+                            <stop offset="48%" stop-color="#123499" />
+                            <stop offset="100%" stop-color="#123499" />
+                        </linearGradient>
+                        <linearGradient id="learning-resource-wave-blue-highlight" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#4a6bd1" />
+                            <stop offset="48%" stop-color="#6f8cf0" />
+                            <stop offset="100%" stop-color="#4f72dc" />
                         </linearGradient>
                         <linearGradient id="learning-resource-wave-orange" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#ff9f1a" />
-                            <stop offset="42%" stop-color="#ff8c00" />
-                            <stop offset="76%" stop-color="#ff7400" />
-                            <stop offset="100%" stop-color="#ff9812" />
+                            <stop offset="0%" stop-color="#ff7b00" />
+                            <stop offset="42%" stop-color="#ff7b00" />
+                            <stop offset="76%" stop-color="#ff7b00" />
+                            <stop offset="100%" stop-color="#ff7b00" />
+                        </linearGradient>
+                        <linearGradient id="learning-resource-wave-orange-highlight" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ffb15a" />
+                            <stop offset="42%" stop-color="#ffc06f" />
+                            <stop offset="76%" stop-color="#ffab47" />
+                            <stop offset="100%" stop-color="#ffb861" />
                         </linearGradient>
                     </defs>
                     <path
-                        d="M0 188C114 226 236 222 361 168C486 113 602 28 732 32C874 36 992 152 1115 211C1223 262 1334 263 1440 220L1440 252C1328 278 1214 274 1091 239C965 206 855 101 732 90C604 80 490 165 364 224C239 278 117 276 0 226Z"
+                        :d="secondaryBlueWavePath"
                         fill="url(#learning-resource-wave-blue)"
-                    />
+                        fill-opacity="0.24"
+                    >
+                        <animate
+                            ref="blueWaveBackLeftAnimation"
+                            attributeName="d"
+                            dur="1060ms"
+                            begin="indefinite"
+                            :values="`${secondaryBlueWavePath};${secondaryLeftBlueWavePath};${secondaryRightBlueWavePath};${secondaryBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="blueWaveBackRightAnimation"
+                            attributeName="d"
+                            dur="1060ms"
+                            begin="indefinite"
+                            :values="`${secondaryBlueWavePath};${secondaryRightBlueWavePath};${secondaryLeftBlueWavePath};${secondaryBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
                     <path
-                        d="M0 226C117 276 239 278 364 224C490 165 604 80 732 90C855 101 965 206 1091 239C1214 274 1328 278 1440 252L1440 304C1327 329 1213 333 1088 320C963 289 853 220 732 223C604 226 490 290 363 334C239 377 118 362 0 302Z"
+                        :d="baseBlueWavePath"
+                        fill="url(#learning-resource-wave-blue)"
+                    >
+                        <animate
+                            ref="blueWaveLeftAnimation"
+                            attributeName="d"
+                            dur="980ms"
+                            begin="indefinite"
+                            :values="`${baseBlueWavePath};${leftBlueWavePath};${rightBlueWavePath};${baseBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="blueWaveRightAnimation"
+                            attributeName="d"
+                            dur="980ms"
+                            begin="indefinite"
+                            :values="`${baseBlueWavePath};${rightBlueWavePath};${leftBlueWavePath};${baseBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
+                    <path
+                        :d="secondaryBlueWavePath"
+                        fill="url(#learning-resource-wave-blue-highlight)"
+                        fill-opacity="0.18"
+                    >
+                        <animate
+                            ref="blueWaveGlowLeftAnimation"
+                            attributeName="d"
+                            dur="1120ms"
+                            begin="indefinite"
+                            :values="`${secondaryBlueWavePath};${secondaryLeftBlueWavePath};${secondaryRightBlueWavePath};${secondaryBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="blueWaveGlowRightAnimation"
+                            attributeName="d"
+                            dur="1120ms"
+                            begin="indefinite"
+                            :values="`${secondaryBlueWavePath};${secondaryRightBlueWavePath};${secondaryLeftBlueWavePath};${secondaryBlueWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
+                    <path
+                        :d="secondaryOrangeWavePath"
+                        fill="url(#learning-resource-wave-orange)"
+                        fill-opacity="0.3"
+                    >
+                        <animate
+                            ref="orangeWaveBackLeftAnimation"
+                            attributeName="d"
+                            dur="1060ms"
+                            begin="indefinite"
+                            :values="`${secondaryOrangeWavePath};${secondaryLeftOrangeWavePath};${secondaryRightOrangeWavePath};${secondaryOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="orangeWaveBackRightAnimation"
+                            attributeName="d"
+                            dur="1060ms"
+                            begin="indefinite"
+                            :values="`${secondaryOrangeWavePath};${secondaryRightOrangeWavePath};${secondaryLeftOrangeWavePath};${secondaryOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
+                    <path
+                        :d="baseOrangeWavePath"
                         fill="url(#learning-resource-wave-orange)"
                         fill-opacity="0.72"
-                    />
+                    >
+                        <animate
+                            ref="orangeWaveLeftAnimation"
+                            attributeName="d"
+                            dur="980ms"
+                            begin="indefinite"
+                            :values="`${baseOrangeWavePath};${leftOrangeWavePath};${rightOrangeWavePath};${baseOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="orangeWaveRightAnimation"
+                            attributeName="d"
+                            dur="980ms"
+                            begin="indefinite"
+                            :values="`${baseOrangeWavePath};${rightOrangeWavePath};${leftOrangeWavePath};${baseOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
+                    <path
+                        :d="secondaryOrangeWavePath"
+                        fill="url(#learning-resource-wave-orange-highlight)"
+                        fill-opacity="0.16"
+                    >
+                        <animate
+                            ref="orangeWaveGlowLeftAnimation"
+                            attributeName="d"
+                            dur="1120ms"
+                            begin="indefinite"
+                            :values="`${secondaryOrangeWavePath};${secondaryLeftOrangeWavePath};${secondaryRightOrangeWavePath};${secondaryOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                        <animate
+                            ref="orangeWaveGlowRightAnimation"
+                            attributeName="d"
+                            dur="1120ms"
+                            begin="indefinite"
+                            :values="`${secondaryOrangeWavePath};${secondaryRightOrangeWavePath};${secondaryLeftOrangeWavePath};${secondaryOrangeWavePath}`"
+                            keyTimes="0;0.34;0.68;1"
+                            calcMode="spline"
+                            keySplines="0.22 1 0.36 1;0.42 0 0.2 1;0.22 1 0.36 1"
+                        />
+                    </path>
                 </svg>
             </div>
 
@@ -499,7 +842,7 @@ const partnerOrganizations = [
                         type="button"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/96 text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         aria-label="Previous featured book"
-                        @click="goToPreviousShowcase({ restartAutoplay: true })"
+                        @click="goToPreviousShowcase({ restartAutoplay: true, triggerWaveMotion: true })"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M11.75 4.5 6.25 10l5.5 5.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
@@ -515,7 +858,7 @@ const partnerOrganizations = [
                             :class="index === activeShowcaseIndex ? 'scale-125 bg-slate-950 shadow-[0_0_0_6px_rgba(59,130,246,0.14)]' : 'bg-slate-300 hover:bg-slate-400'"
                             :aria-label="`Go to featured book ${index + 1}`"
                             :aria-current="index === activeShowcaseIndex ? 'true' : 'false'"
-                            @click="setActiveShowcase(index); resumeShowcaseAutoplayIfAllowed()"
+                            @click="handleShowcaseDotClick(index)"
                         />
                     </div>
 
@@ -523,7 +866,7 @@ const partnerOrganizations = [
                         type="button"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/96 text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         aria-label="Next featured book"
-                        @click="goToNextShowcase({ restartAutoplay: true })"
+                        @click="goToNextShowcase({ restartAutoplay: true, triggerWaveMotion: true })"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M8.25 4.5 13.75 10l-5.5 5.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
@@ -561,7 +904,7 @@ const partnerOrganizations = [
             </div>
         </section>
 
-        <section class="mt-10">
+        <section ref="featuredVideoSection" class="mt-10">
             <div class="mb-5 flex items-center gap-2">
                 <span class="h-2.5 w-2.5 rounded-full bg-orange-400" />
                 <h2 class="text-xl font-black text-slate-950">Featured Video</h2>
@@ -606,6 +949,7 @@ const partnerOrganizations = [
                     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-lg">
                         <iframe
                             v-if="mainVideoEmbedUrl"
+                            ref="featuredVideoIframe"
                             :src="mainVideoEmbedUrl"
                             class="aspect-video w-full"
                             title="Featured video player"
