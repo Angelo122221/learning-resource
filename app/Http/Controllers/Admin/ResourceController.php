@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -96,21 +97,22 @@ class ResourceController extends Controller
 
     public function storeUser(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => [...$this->depedEmailRules(), Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::in(['teacher', 'user', 'admin'])],
-            'district' => ['nullable', 'string', 'max:255'],
-            'school_name' => ['nullable', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255', Rule::requiredIf($request->input('role') === 'teacher')],
+            'school_name' => ['nullable', 'string', 'max:255', Rule::requiredIf($request->input('role') === 'teacher')],
         ]);
 
-        if ($validated['role'] === 'teacher') {
-            $request->validate([
-                'district' => ['required', 'string', 'max:255'],
-                'school_name' => ['required', 'string', 'max:255'],
-            ]);
+        if ($validator->fails()) {
+            return to_route('admin.users', [], 303)
+                ->withErrors($validator)
+                ->withInput();
         }
+
+        $validated = $validator->validated();
 
         User::create([
             'name' => $validated['name'],
@@ -123,31 +125,33 @@ class ResourceController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        return back()->with('success', 'User account created successfully.');
+        return to_route('admin.users', [], 303)
+            ->with('success', 'User account created successfully.');
     }
 
     public function updateUser(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => [...$this->depedEmailRules(), Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', Rule::in(['teacher', 'user', 'admin'])],
-            'district' => ['nullable', 'string', 'max:255'],
-            'school_name' => ['nullable', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255', Rule::requiredIf($request->input('role') === 'teacher')],
+            'school_name' => ['nullable', 'string', 'max:255', Rule::requiredIf($request->input('role') === 'teacher')],
         ]);
 
-        if ($validated['role'] === 'teacher') {
-            $request->validate([
-                'district' => ['required', 'string', 'max:255'],
-                'school_name' => ['required', 'string', 'max:255'],
-            ]);
+        if ($validator->fails()) {
+            return to_route('admin.users', [], 303)
+                ->withErrors($validator)
+                ->withInput();
         }
+
+        $validated = $validator->validated();
 
         $isAdmin = $validated['role'] === 'admin';
 
         // Keep at least one admin account in the system.
         if ($user->is_admin && ! $isAdmin && User::where('is_admin', true)->count() <= 1) {
-            return back()->withErrors([
+            return to_route('admin.users', [], 303)->withErrors([
                 'role' => 'At least one admin account is required.',
             ]);
         }
@@ -161,39 +165,50 @@ class ResourceController extends Controller
             'school_name' => $validated['school_name'] ?: null,
         ]);
 
-        return back()->with('success', 'User profile updated successfully.');
+        return to_route('admin.users', [], 303)
+            ->with('success', 'User profile updated successfully.');
     }
 
     public function updateUserPassword(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
+
+        if ($validator->fails()) {
+            return to_route('admin.users', [], 303)
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $validated = $validator->validated();
 
         $user->update([
             'password' => $validated['password'],
         ]);
 
-        return back()->with('success', 'User password updated successfully.');
+        return to_route('admin.users', [], 303)
+            ->with('success', 'User password updated successfully.');
     }
 
     public function destroyUser(User $user): RedirectResponse
     {
         if (Auth::id() === $user->id) {
-            return back()->withErrors([
+            return to_route('admin.users', [], 303)->withErrors([
                 'user' => 'You cannot delete your own account while logged in.',
             ]);
         }
 
         if ($user->is_admin && User::where('is_admin', true)->count() <= 1) {
-            return back()->withErrors([
+            return to_route('admin.users', [], 303)->withErrors([
                 'user' => 'At least one admin account is required.',
             ]);
         }
 
         $user->delete();
 
-        return back()->with('success', 'User deleted successfully.');
+        return to_route('admin.users', [], 303)
+            ->with('success', 'User deleted successfully.');
     }
 
     public function storeFolder(Request $request): RedirectResponse
@@ -255,7 +270,8 @@ class ResourceController extends Controller
     {
         $folder->delete();
 
-        return back()->with('success', 'Folder deleted successfully.');
+        return to_route('admin.resources', [], 303)
+            ->with('success', 'Folder deleted successfully.');
     }
 
     public function destroyFile(ResourceFile $file): RedirectResponse
@@ -270,7 +286,8 @@ class ResourceController extends Controller
 
         $file->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return to_route('admin.resources', [], 303)
+            ->with('success', 'File deleted successfully.');
     }
 
     public function toggleFolderLock(Folder $folder): RedirectResponse
@@ -337,7 +354,8 @@ class ResourceController extends Controller
 
         $carousel->delete();
 
-        return back()->with('success', 'Carousel image deleted successfully.');
+        return to_route('admin.carousel', [], 303)
+            ->with('success', 'Carousel image deleted successfully.');
     }
 
     public function storeVideo(Request $request): RedirectResponse
@@ -368,7 +386,8 @@ class ResourceController extends Controller
     {
         $video->delete();
 
-        return back()->with('success', 'Featured video deleted successfully.');
+        return to_route('admin.videos', [], 303)
+            ->with('success', 'Featured video deleted successfully.');
     }
 
     public function storeAnnouncement(Request $request): RedirectResponse
@@ -432,7 +451,8 @@ class ResourceController extends Controller
 
         $announcement->delete();
 
-        return back()->with('success', 'Announcement deleted successfully.');
+        return to_route('admin.announcements', [], 303)
+            ->with('success', 'Announcement deleted successfully.');
     }
 
     public function analytics(): Response

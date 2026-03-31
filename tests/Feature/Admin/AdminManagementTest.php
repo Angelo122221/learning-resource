@@ -116,6 +116,34 @@ class AdminManagementTest extends TestCase
         ]);
     }
 
+    public function test_carousel_delete_from_inertia_uses_see_other_redirect(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $imagePath = UploadedFile::fake()->image('slide-delete.jpg')->store('carousel', 'public');
+
+        $carousel = CarouselImage::create([
+            'title' => 'Delete slide',
+            'image_path' => $imagePath,
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/carousel')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete("/admin/carousel/{$carousel->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/carousel');
+
+        $this->assertDatabaseMissing('carousel_images', [
+            'id' => $carousel->id,
+        ]);
+    }
+
     public function test_admin_can_create_update_and_delete_featured_videos(): void
     {
         $admin = $this->createAdminUser();
@@ -145,6 +173,166 @@ class AdminManagementTest extends TestCase
 
         $this->assertDatabaseMissing('featured_videos', [
             'id' => $video->id,
+        ]);
+    }
+
+    public function test_folder_delete_from_inertia_uses_see_other_redirect(): void
+    {
+        $admin = $this->createAdminUser();
+
+        $folder = Folder::create([
+            'name' => 'Delete Folder',
+            'parent_id' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/resources')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete("/admin/folders/{$folder->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/resources');
+
+        $this->assertDatabaseMissing('folders', [
+            'id' => $folder->id,
+        ]);
+    }
+
+    public function test_file_delete_from_inertia_uses_see_other_redirect(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdminUser();
+
+        $folder = Folder::create([
+            'name' => 'Delete File Folder',
+            'parent_id' => null,
+        ]);
+
+        $filePath = UploadedFile::fake()->create('teacher-guide.pdf', 32, 'application/pdf')
+            ->store('resources', 'public');
+        $previewPath = UploadedFile::fake()->image('teacher-guide-preview.jpg')
+            ->store('resources/previews', 'public');
+
+        $file = ResourceFile::create([
+            'folder_id' => $folder->id,
+            'title' => 'Teacher Guide',
+            'file_path' => $filePath,
+            'preview_image_path' => $previewPath,
+            'file_type' => 'pdf',
+            'is_locked' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/resources')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete("/admin/files/{$file->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/resources');
+
+        $this->assertDatabaseMissing('resource_files', [
+            'id' => $file->id,
+        ]);
+        $this->assertFalse(Storage::disk('public')->exists($filePath));
+        $this->assertFalse(Storage::disk('public')->exists($previewPath));
+    }
+
+    public function test_delete_request_to_admin_resources_redirects_to_get_resources(): void
+    {
+        $admin = $this->createAdminUser();
+
+        $this->actingAs($admin)
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete('/admin/resources')
+            ->assertStatus(303)
+            ->assertRedirect('/admin/resources');
+    }
+
+    public function test_user_edit_from_inertia_uses_see_other_redirect(): void
+    {
+        $admin = $this->createAdminUser();
+        $teacher = $this->createTeacherUser([
+            'name' => 'Edit Target',
+            'email' => 'edit.target@deped.gov.ph',
+            'district' => 'District A',
+            'school_name' => 'School A',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->patch("/admin/users/{$teacher->id}", [
+                'name' => 'Edited Teacher',
+                'email' => 'edited.teacher@deped.gov.ph',
+                'role' => 'teacher',
+                'district' => 'District B',
+                'school_name' => 'School B',
+            ])
+            ->assertStatus(303)
+            ->assertRedirect('/admin/users');
+
+        $teacher->refresh();
+
+        $this->assertSame('Edited Teacher', $teacher->name);
+        $this->assertSame('edited.teacher@deped.gov.ph', $teacher->email);
+        $this->assertSame('District B', $teacher->district);
+        $this->assertSame('School B', $teacher->school_name);
+    }
+
+    public function test_user_password_update_from_inertia_uses_see_other_redirect(): void
+    {
+        $admin = $this->createAdminUser();
+        $teacher = $this->createTeacherUser([
+            'email' => 'password.update@deped.gov.ph',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->patch("/admin/users/{$teacher->id}/password", [
+                'password' => 'updatedpassword123',
+                'password_confirmation' => 'updatedpassword123',
+            ])
+            ->assertStatus(303)
+            ->assertRedirect('/admin/users');
+
+        $teacher->refresh();
+        $this->assertTrue(Hash::check('updatedpassword123', $teacher->password));
+    }
+
+    public function test_user_delete_from_inertia_uses_see_other_redirect(): void
+    {
+        $admin = $this->createAdminUser();
+        $teacher = $this->createTeacherUser([
+            'email' => 'delete.target@deped.gov.ph',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete("/admin/users/{$teacher->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/users');
+
+        $this->assertDatabaseMissing('users', [
+            'id' => $teacher->id,
         ]);
     }
 
@@ -183,6 +371,30 @@ class AdminManagementTest extends TestCase
         $this->actingAs($admin)
             ->delete("/admin/announcements/{$announcement->id}")
             ->assertRedirect();
+
+        $this->assertDatabaseMissing('announcements', [
+            'id' => $announcement->id,
+        ]);
+    }
+
+    public function test_announcement_delete_from_inertia_uses_see_other_redirect(): void
+    {
+        $admin = $this->createAdminUser();
+
+        $announcement = Announcement::create([
+            'title' => 'Delete me',
+            'content' => 'This announcement should be deleted.',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/admin/announcements')
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->delete("/admin/announcements/{$announcement->id}")
+            ->assertStatus(303)
+            ->assertRedirect('/admin/announcements');
 
         $this->assertDatabaseMissing('announcements', [
             'id' => $announcement->id,

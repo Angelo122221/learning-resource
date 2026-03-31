@@ -49,7 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/analytics', [AdminResourceController::class, 'analytics'])->name('admin.analytics'); // NEW!
         Route::get('/resources/analytics', [AdminResourceController::class, 'analytics'])->name('admin.resources.analytics');
         Route::delete('/resources', function () {
-            return redirect()->route('admin.analytics');
+            return to_route('admin.resources', [], 303);
         });
         Route::get('/users', [AdminResourceController::class, 'users'])->name('admin.users');
 
