@@ -564,24 +564,7 @@ watch(
     { immediate: true },
 );
 
-const partnerOrganizations = [
-    {
-        name: 'Enhanced Basic Education Information Systems (EBEIS)',
-        image: '/images/partners/ebeis.png',
-    },
-    {
-        name: 'Learner Information System (LIS)',
-        image: '/images/partners/lis.png',
-    },
-    {
-        name: 'Learning Resource Management and Development System (LRMDS)',
-        image: '/images/partners/lrmds.png',
-    },
-    {
-        name: 'DepEd Partnership Database System',
-        image: '/images/partners/deped-partnership-database-system.png',
-    },
-];
+
 </script>
 
 <template>
@@ -963,31 +946,6 @@ const partnerOrganizations = [
             </div>
         </section>
 
-        <section class="mt-10">
-            <div class="mb-5 flex items-center gap-2">
-                <span class="h-2.5 w-2.5 rounded-full bg-orange-400" />
-                <h2 class="text-xl font-black text-slate-950">Partner Organization</h2>
-            </div>
-            <div class="rounded-[2rem] border-2 border-slate-200 bg-white p-4 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:p-6">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <article
-                        v-for="partner in partnerOrganizations"
-                        :key="partner.name"
-                        class="rounded-[1.6rem] border border-slate-100 bg-slate-50 p-4 text-center"
-                    >
-                        <div class="flex min-h-[6rem] items-center justify-center">
-                            <img
-                                :src="partner.image"
-                                :alt="partner.name"
-                                class="h-auto max-h-24 w-auto max-w-[7rem] object-contain"
-                            />
-                </div>
-                        <p class="mt-4 text-sm font-black uppercase tracking-[0.08em] text-slate-900">{{ partner.name }}</p>
-                        <p class="mt-2 text-xs font-medium leading-5 text-slate-500">{{ partner.description }}</p>
-                    </article>
-        </div>
-    </div>
-        </section>
 
         <button
             type="button"
