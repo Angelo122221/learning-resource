@@ -1,0 +1,7 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="96" height="96" rx="24" fill="#EFF6FF"/>
+  <rect x="8" y="8" width="80" height="80" rx="20" fill="#1D4ED8"/>
+  <path d="M30 66V28H48.5C57.6127 28 65 35.3873 65 44.5C65 53.6127 57.6127 61 48.5 61H38V66H30Z" fill="#DBEAFE"/>
+  <path d="M38 53H47.5C52.1944 53 56 49.1944 56 44.5C56 39.8056 52.1944 36 47.5 36H38V53Z" fill="#1D4ED8"/>
+  <text x="48" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#DBEAFE">DEPED</text>
+</svg>

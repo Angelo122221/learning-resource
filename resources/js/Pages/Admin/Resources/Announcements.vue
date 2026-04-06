@@ -15,28 +15,19 @@ defineProps({
 const announcementForm = useForm({
     title: '',
     content: '',
-    image: null,
 });
 
 const announcementEditForm = useForm({
     title: '',
     content: '',
-    image: null,
-    remove_image: false,
 });
 
 const editingAnnouncementId = ref(null);
-const announcementFileInput = ref(null);
-const mediaUrl = (path) => `/media/${path}`;
 
 const submitAnnouncement = () => {
     announcementForm.post('/admin/announcements', {
-        forceFormData: true,
         preserveScroll: true,
-        onSuccess: () => {
-            announcementForm.reset();
-            if (announcementFileInput.value) announcementFileInput.value.value = '';
-        },
+        onSuccess: () => announcementForm.reset(),
     });
 };
 
@@ -44,8 +35,6 @@ const startEditAnnouncement = (announcement) => {
     editingAnnouncementId.value = announcement.id;
     announcementEditForm.title = announcement.title;
     announcementEditForm.content = announcement.content;
-    announcementEditForm.image = null;
-    announcementEditForm.remove_image = false;
 };
 
 const cancelEditAnnouncement = () => {
@@ -60,7 +49,6 @@ const updateAnnouncement = (announcementId) => {
             _method: 'patch',
         }))
         .post(`/admin/announcements/${announcementId}`, {
-            forceFormData: true,
             preserveScroll: true,
             onSuccess: () => cancelEditAnnouncement(),
         });
@@ -81,7 +69,7 @@ const deleteAnnouncement = (announcementId) => {
     <Head title="Admin Announcements" />
 
     <AdminLayout>
-        <AppSectionCard title="Announcements" subtitle="Publish text updates for teachers, with an optional image.">
+        <AppSectionCard title="Announcements" subtitle="Publish text updates for teachers.">
             <form @submit.prevent="submitAnnouncement" class="space-y-4 border-b border-slate-200 pb-5">
                 <div>
                     <label class="field-label" for="announcement_title">Title</label>
@@ -101,19 +89,6 @@ const deleteAnnouncement = (announcementId) => {
                     <InputError :message="announcementForm.errors.content" />
                 </div>
 
-                <div>
-                    <label class="field-label" for="announcement_image">Announcement Image</label>
-                    <input
-                        id="announcement_image"
-                        ref="announcementFileInput"
-                        type="file"
-                        accept="image/*"
-                        class="field-input"
-                        @change="announcementForm.image = $event.target.files[0]"
-                    />
-                    <InputError :message="announcementForm.errors.image" />
-                </div>
-
                 <button type="submit" class="action-btn-primary w-full justify-center">Publish Announcement</button>
             </form>
 
@@ -123,19 +98,8 @@ const deleteAnnouncement = (announcementId) => {
                         <form @submit.prevent="updateAnnouncement(announcement.id)" class="space-y-3">
                             <input v-model="announcementEditForm.title" type="text" class="field-input" placeholder="Announcement title" />
                             <textarea v-model="announcementEditForm.content" rows="4" class="field-input" placeholder="Announcement text" />
-                            <input
-                                type="file"
-                                accept="image/*"
-                                class="field-input"
-                                @change="announcementEditForm.image = $event.target.files[0]"
-                            />
-                            <label class="flex items-center gap-2 text-sm font-semibold text-slate-600">
-                                <input v-model="announcementEditForm.remove_image" type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                                Remove current image
-                            </label>
                             <InputError :message="announcementEditForm.errors.title" />
                             <InputError :message="announcementEditForm.errors.content" />
-                            <InputError :message="announcementEditForm.errors.image" />
                             <div class="flex flex-wrap gap-2">
                                 <button type="submit" class="action-btn-primary">Save</button>
                                 <button type="button" class="action-btn-secondary" @click="cancelEditAnnouncement">Cancel</button>
@@ -144,12 +108,6 @@ const deleteAnnouncement = (announcementId) => {
                     </template>
 
                     <template v-else>
-                        <img
-                            v-if="announcement.image_path"
-                            :src="mediaUrl(announcement.image_path)"
-                            alt="Announcement image"
-                            class="mb-3 h-40 w-full rounded-xl object-cover"
-                        />
                         <h3 class="text-base font-black text-slate-900">{{ announcement.title }}</h3>
                         <p class="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-600">{{ announcement.content }}</p>
                         <div class="mt-4 flex flex-wrap gap-2">

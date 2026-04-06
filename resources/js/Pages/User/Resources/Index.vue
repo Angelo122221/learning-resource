@@ -5,7 +5,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import UserFolderItem from './FolderItem.vue';
 
 const props = defineProps({
@@ -16,6 +16,12 @@ const props = defineProps({
 });
 
 const isAnnouncementsModalOpen = ref(false);
+const resourceCategoriesSection = ref(null);
+const resourceCategoriesGrid = ref(null);
+const isResourceCategoriesExpanded = ref(false);
+const resourceCategoriesCollapsedHeight = ref(null);
+const resourceCategoriesContentHeight = ref(null);
+const canExpandResourceCategories = ref(false);
 const localAnnouncements = ref([]);
 const expandedAnnouncementIds = ref([]);
 const pendingReadIds = ref([]);
@@ -27,6 +33,7 @@ const mainVideo = computed(() => props.featuredVideos[0] ?? null);
 const featuredVideoSection = ref(null);
 const featuredVideoIframe = ref(null);
 let featuredVideoObserver = null;
+let resourceCategoriesResizeObserver = null;
 
 const createYoutubeEmbedUrl = (videoId) => {
     if (!videoId) {
@@ -71,6 +78,7 @@ const mainVideoEmbedUrl = computed(() => {
     }
 });
 const activeShowcaseIndex = ref(0);
+const showcaseDotWindowStart = ref(0);
 const autoplayHandle = ref(null);
 const pressedShowcaseKey = ref(null);
 const isShowcaseHovered = ref(false);
@@ -126,6 +134,193 @@ const visibleCarouselSlides = computed(() => visibleCarouselOffsets.value.map((o
     slide: showcaseSlides.value[wrapSlideIndex(activeShowcaseIndex.value + offset)],
     key: `${showcaseSlides.value[wrapSlideIndex(activeShowcaseIndex.value + offset)]?.id ?? 'slide'}-${offset}`,
 })));
+const getResourceCategoryRows = (cards) => {
+    const rows = [];
+
+    cards.forEach((card) => {
+        const top = Math.round(card.offsetTop);
+        const existingRow = rows.find((row) => Math.abs(row.top - top) <= 1);
+
+        if (existingRow) {
+            existingRow.height = Math.max(existingRow.height, card.offsetHeight);
+            return;
+        }
+
+        rows.push({
+            top,
+            height: card.offsetHeight,
+        });
+    });
+
+    return rows.sort((left, right) => left.top - right.top);
+};
+
+const measureResourceCategories = async () => {
+    await nextTick();
+
+    const grid = resourceCategoriesGrid.value;
+
+    if (!grid) {
+        resourceCategoriesCollapsedHeight.value = null;
+        resourceCategoriesContentHeight.value = null;
+        canExpandResourceCategories.value = false;
+        return;
+    }
+
+    const cards = Array.from(grid.children).filter((child) => child instanceof HTMLElement);
+
+    if (!cards.length) {
+        resourceCategoriesCollapsedHeight.value = null;
+        resourceCategoriesContentHeight.value = null;
+        canExpandResourceCategories.value = false;
+        return;
+    }
+
+    const rows = getResourceCategoryRows(cards);
+    const contentHeight = Math.ceil(grid.scrollHeight);
+
+    resourceCategoriesContentHeight.value = contentHeight;
+
+    if (rows.length <= 3) {
+        resourceCategoriesCollapsedHeight.value = contentHeight;
+        canExpandResourceCategories.value = false;
+        isResourceCategoriesExpanded.value = false;
+        return;
+    }
+
+    const thirdRow = rows[2];
+    const collapsedHeight = Math.min(
+        contentHeight,
+        Math.round(thirdRow.top + thirdRow.height),
+    );
+
+    resourceCategoriesCollapsedHeight.value = collapsedHeight;
+    canExpandResourceCategories.value = contentHeight > collapsedHeight + 8;
+
+    if (!canExpandResourceCategories.value) {
+        isResourceCategoriesExpanded.value = false;
+    }
+};
+
+const resourceCategoriesContainerStyle = computed(() => {
+    if (!resourceCategoriesContentHeight.value) {
+        return {};
+    }
+
+    return {
+        maxHeight: `${isResourceCategoriesExpanded.value
+            ? resourceCategoriesContentHeight.value
+            : (resourceCategoriesCollapsedHeight.value ?? resourceCategoriesContentHeight.value)}px`,
+    };
+});
+
+const toggleResourceCategories = async () => {
+    if (!canExpandResourceCategories.value) {
+        return;
+    }
+
+    if (isResourceCategoriesExpanded.value) {
+        isResourceCategoriesExpanded.value = false;
+        await nextTick();
+
+        const section = resourceCategoriesSection.value;
+
+        if (section && window.scrollY > section.offsetTop - 32) {
+            section.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+
+        return;
+    }
+
+    isResourceCategoriesExpanded.value = true;
+    void measureResourceCategories();
+};
+
+const observeResourceCategoriesGrid = (grid, previousGrid = null) => {
+    if (!resourceCategoriesResizeObserver) {
+        return;
+    }
+
+    if (previousGrid) {
+        resourceCategoriesResizeObserver.unobserve(previousGrid);
+    }
+
+    if (grid) {
+        resourceCategoriesResizeObserver.observe(grid);
+    }
+};
+
+const MAX_SHOWCASE_DOTS = 5;
+
+const clampShowcaseDotWindowStart = (startIndex) => {
+    const maxStart = Math.max(showcaseSlides.value.length - MAX_SHOWCASE_DOTS, 0);
+
+    return Math.min(Math.max(startIndex, 0), maxStart);
+};
+
+const visibleShowcaseDots = computed(() => {
+    const totalSlides = showcaseSlides.value.length;
+
+    if (totalSlides <= MAX_SHOWCASE_DOTS) {
+        return showcaseSlides.value.map((slide, index) => ({
+            id: slide.id ?? `slide-${index}`,
+            index,
+        }));
+    }
+
+    const startIndex = clampShowcaseDotWindowStart(showcaseDotWindowStart.value);
+    const endIndex = Math.min(startIndex + MAX_SHOWCASE_DOTS - 1, totalSlides - 1);
+
+    return Array.from({ length: endIndex - startIndex + 1 }, (_, offset) => {
+        const index = startIndex + offset;
+        const slide = showcaseSlides.value[index];
+
+        return {
+            id: slide?.id ?? `slide-${index}`,
+            index,
+        };
+    });
+});
+
+const syncShowcaseDotWindow = (nextIndex, previousIndex = null) => {
+    const totalSlides = showcaseSlides.value.length;
+
+    if (totalSlides <= MAX_SHOWCASE_DOTS) {
+        showcaseDotWindowStart.value = 0;
+        return;
+    }
+
+    const maxStart = totalSlides - MAX_SHOWCASE_DOTS;
+    const currentStart = clampShowcaseDotWindowStart(showcaseDotWindowStart.value);
+    const currentEnd = currentStart + MAX_SHOWCASE_DOTS - 1;
+
+    if (previousIndex !== null) {
+        if (previousIndex === totalSlides - 1 && nextIndex === 0) {
+            showcaseDotWindowStart.value = 0;
+            return;
+        }
+
+        if (previousIndex === 0 && nextIndex === totalSlides - 1) {
+            showcaseDotWindowStart.value = maxStart;
+            return;
+        }
+    }
+
+    if (nextIndex < currentStart) {
+        showcaseDotWindowStart.value = nextIndex;
+        return;
+    }
+
+    if (nextIndex > currentEnd) {
+        showcaseDotWindowStart.value = nextIndex - (MAX_SHOWCASE_DOTS - 1);
+        return;
+    }
+
+    showcaseDotWindowStart.value = currentStart;
+};
 
 const setActiveShowcase = (index) => {
     activeShowcaseIndex.value = wrapSlideIndex(index);
@@ -371,14 +566,23 @@ watch(
     (length) => {
         if (!length) {
             activeShowcaseIndex.value = 0;
+            showcaseDotWindowStart.value = 0;
             stopShowcaseAutoplay();
             return;
         }
 
         activeShowcaseIndex.value = wrapSlideIndex(activeShowcaseIndex.value);
+        syncShowcaseDotWindow(activeShowcaseIndex.value);
         startShowcaseAutoplay();
     },
     { immediate: true },
+);
+
+watch(
+    () => activeShowcaseIndex.value,
+    (nextIndex, previousIndex) => {
+        syncShowcaseDotWindow(nextIndex, previousIndex);
+    },
 );
 
 watch(
@@ -392,6 +596,15 @@ onMounted(() => {
     startShowcaseAutoplay();
     startObservingFeaturedVideo();
     document.addEventListener('visibilitychange', handlePageVisibilityChange);
+    void measureResourceCategories();
+
+    if (typeof ResizeObserver !== 'undefined') {
+        resourceCategoriesResizeObserver = new ResizeObserver(() => {
+            void measureResourceCategories();
+        });
+
+        observeResourceCategoriesGrid(resourceCategoriesGrid.value);
+    }
 });
 
 onBeforeUnmount(() => {
@@ -403,6 +616,8 @@ onBeforeUnmount(() => {
     if (showcasePressHandle) {
         clearTimeout(showcasePressHandle);
     }
+
+    resourceCategoriesResizeObserver?.disconnect();
 });
 
 const announcementDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -564,6 +779,20 @@ watch(
     { immediate: true },
 );
 
+watch(
+    () => props.folders?.map((folder) => `${folder.id}:${folder.name}:${folder.is_locked}`) ?? [],
+    () => {
+        void measureResourceCategories();
+    },
+    { deep: true },
+);
+
+watch(
+    () => resourceCategoriesGrid.value,
+    (grid, previousGrid) => {
+        observeResourceCategoriesGrid(grid, previousGrid);
+    },
+);
 
 </script>
 
@@ -834,14 +1063,14 @@ watch(
 
                     <div class="flex items-center justify-center gap-2 rounded-full border border-slate-200/70 bg-white/96 px-4 py-3">
                         <button
-                            v-for="(slide, index) in showcaseSlides"
-                            :key="slide.id"
+                            v-for="dot in visibleShowcaseDots"
+                            :key="dot.id"
                             type="button"
                             class="h-2.5 w-2.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                            :class="index === activeShowcaseIndex ? 'scale-125 bg-slate-950 shadow-[0_0_0_6px_rgba(59,130,246,0.14)]' : 'bg-slate-300 hover:bg-slate-400'"
-                            :aria-label="`Go to featured book ${index + 1}`"
-                            :aria-current="index === activeShowcaseIndex ? 'true' : 'false'"
-                            @click="handleShowcaseDotClick(index)"
+                            :class="dot.index === activeShowcaseIndex ? 'scale-125 bg-slate-950 shadow-[0_0_0_6px_rgba(59,130,246,0.14)]' : 'bg-slate-300 hover:bg-slate-400'"
+                            :aria-label="`Go to featured book ${dot.index + 1}`"
+                            :aria-current="dot.index === activeShowcaseIndex ? 'true' : 'false'"
+                            @click="handleShowcaseDotClick(dot.index)"
                         />
                     </div>
 
@@ -859,10 +1088,9 @@ watch(
             </div>
         </section>
 
-        <section class="mt-10 rounded-[2rem] border-2 border-slate-200 bg-white px-4 py-6 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:px-6 md:py-8">
+        <section ref="resourceCategoriesSection" class="mt-10 rounded-[2rem] border-2 border-slate-200 bg-white px-4 py-6 shadow-[0_18px_35px_rgba(15,23,42,0.07)] md:px-6 md:py-7">
             <div class="mb-6 text-center">
                 <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Resource Categories</h2>
-                <p class="mt-2 text-sm font-medium text-slate-500">Explore our extensive library of educational materials.</p>
             </div>
 
             <AppEmptyState
@@ -871,18 +1099,29 @@ watch(
                 message="Once folders are published by admins, they will appear here as learning resource categories."
             />
 
-            <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <UserFolderItem
-                    v-for="folder in folders"
-                    :key="folder.id"
-                    :folder="folder"
-                    :is-root="true"
-                />
+            <div v-else>
+                <div
+                    class="relative overflow-hidden transition-[max-height] duration-500 ease-in-out"
+                    :style="resourceCategoriesContainerStyle"
+                >
+                    <div ref="resourceCategoriesGrid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <UserFolderItem
+                            v-for="folder in folders"
+                            :key="folder.id"
+                            :folder="folder"
+                            :is-root="true"
+                        />
+                    </div>
+                </div>
             </div>
 
-            <div v-if="folders.length" class="mt-6 flex justify-center">
-                <button type="button" class="action-btn-primary">
-                    View All Resources
+            <div v-if="canExpandResourceCategories" class="mt-5 flex justify-center">
+                <button
+                    type="button"
+                    class="action-btn-primary min-w-[11.5rem] justify-center px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em]"
+                    @click="toggleResourceCategories"
+                >
+                    {{ isResourceCategoriesExpanded ? 'Show Less' : 'View All Resources' }}
                 </button>
             </div>
         </section>
@@ -945,7 +1184,6 @@ watch(
                 </div>
             </div>
         </section>
-
 
         <button
             type="button"

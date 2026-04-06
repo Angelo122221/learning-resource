@@ -65,20 +65,17 @@ const closeModal = () => {
     <div v-if="isRoot" class="h-full w-full">
         <button
             type="button"
-            class="group relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] border-2 border-slate-300 bg-white text-left shadow-[0_14px_25px_rgba(15,23,42,0.18)] transition-all"
-            :class="folder.is_locked ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-1 hover:shadow-[0_20px_38px_rgba(15,23,42,0.2)]'"
+            class="group relative flex h-full w-full flex-col overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white text-left transition-all"
+            :class="folder.is_locked ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-0.5 hover:border-slate-400'"
             @click="handleFolderAction"
         >
             <div class="relative overflow-hidden">
-                <div class="h-40 bg-gradient-to-br" :class="cardTone" />
+                <div class="h-36 bg-gradient-to-br" :class="cardTone" />
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_25%),linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.42))]" />
-                <div class="absolute inset-x-0 top-0 flex items-start justify-between p-4">
-                    <span class="inline-flex rounded-full bg-white/92 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-900">
-                        Category
-                    </span>
+                <div v-if="folder.is_locked" class="absolute right-0 top-0 p-3.5">
                     <AppStatusBadge v-if="folder.is_locked" label="Locked" variant="locked" />
                 </div>
-                <div class="absolute inset-x-0 bottom-0 p-4 text-white">
+                <div class="absolute inset-x-0 bottom-0 p-3.5 text-white">
                     <p class="line-clamp-2 text-lg font-black uppercase tracking-tight">{{ folder.name }}</p>
                     <p class="mt-2 text-[11px] font-black uppercase tracking-[0.18em] text-white/75">
                         {{ folder.children_recursive?.length || 0 }} subfolders / {{ folder.files?.length || 0 }} files
@@ -86,7 +83,7 @@ const closeModal = () => {
                 </div>
             </div>
 
-            <div class="flex items-center justify-between gap-3 px-4 py-4">
+            <div class="flex items-center justify-between gap-3 px-3.5 py-3.5">
                 <div>
                     <p v-if="folder.is_locked" class="text-xs font-black uppercase tracking-[0.18em] text-red-400">
                         Access restricted
@@ -96,7 +93,7 @@ const closeModal = () => {
                     </p>
                 </div>
                 <span
-                    class="inline-flex shrink-0 items-center rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em]"
+                    class="inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]"
                     :class="folder.is_locked ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white'"
                 >
                     {{ folder.is_locked ? 'Locked' : 'Open Resources' }}

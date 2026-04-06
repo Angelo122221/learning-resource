@@ -395,17 +395,11 @@ class ResourceController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:5000'],
-            'image' => ['nullable', 'image', 'max:5120'],
         ]);
-
-        $imagePath = $request->hasFile('image')
-            ? $request->file('image')->store('announcements', 'public')
-            : null;
 
         Announcement::create([
             'title' => $validated['title'],
             'content' => $validated['content'],
-            'image_path' => $imagePath,
         ]);
 
         return back()->with('success', 'Announcement published successfully.');
@@ -416,28 +410,11 @@ class ResourceController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:5000'],
-            'image' => ['nullable', 'image', 'max:5120'],
-            'remove_image' => ['nullable', 'boolean'],
         ]);
-
-        $shouldRemoveImage = (bool) ($validated['remove_image'] ?? false);
-        $imagePath = $announcement->image_path;
-
-        if ($request->hasFile('image')) {
-            if ($imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
-
-            $imagePath = $request->file('image')->store('announcements', 'public');
-        } elseif ($shouldRemoveImage && $imagePath) {
-            Storage::disk('public')->delete($imagePath);
-            $imagePath = null;
-        }
 
         $announcement->update([
             'title' => $validated['title'],
             'content' => $validated['content'],
-            'image_path' => $imagePath,
         ]);
 
         return back()->with('success', 'Announcement updated successfully.');

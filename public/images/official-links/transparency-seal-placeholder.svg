@@ -1,0 +1,8 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="96" height="96" rx="24" fill="#FFF7ED"/>
+  <rect x="8" y="8" width="80" height="80" rx="20" fill="#F59E0B"/>
+  <circle cx="48" cy="34" r="12" fill="#FFFBEB"/>
+  <path d="M48 49L57.5263 54.5V65.5L48 71L38.4737 65.5V54.5L48 49Z" fill="#FFFBEB"/>
+  <path d="M43.5 34L46.5 37L53 30.5" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="48" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#FFF7ED">TS</text>
+</svg>
