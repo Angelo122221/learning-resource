@@ -1,10 +1,15 @@
 {
+    "$schema": "https://json.schemastore.org/jsconfig",
     "compilerOptions": {
         "baseUrl": ".",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "allowJs": true,
         "paths": {
             "@/*": ["resources/js/*"],
-            "ziggy-js": ["./vendor/tightenco/ziggy"]
+            "ziggy-js": ["vendor/tightenco/ziggy/dist/index.esm.js"]
         }
     },
+    "include": ["resources/js/**/*.js", "resources/js/**/*.vue", "vite.config.js"],
     "exclude": ["node_modules", "public"]
 }

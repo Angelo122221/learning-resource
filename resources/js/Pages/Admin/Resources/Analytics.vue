@@ -304,6 +304,47 @@ const hasActiveFilters = computed(() => {
         || normalizeString(filters.value.search) !== '';
 });
 
+const toCsvCell = (value) => {
+    const stringValue = value === null || value === undefined ? '' : String(value);
+    const escaped = stringValue.replace(/"/g, '""');
+
+    return /[",\r\n]/.test(escaped) ? `"${escaped}"` : escaped;
+};
+
+const toCsvLine = (values) => values.map((value) => toCsvCell(value)).join(',');
+
+const cleanExportValue = (value, fallback = '') => {
+    const normalized = normalizeString(value).replace(/\s+/g, ' ');
+    return normalized === '' ? fallback : normalized;
+};
+
+const downloadFilteredCsv = () => {
+    const now = new Date();
+    const csvRows = [
+        ['TIME', 'ACTION', 'USER', 'DISTRICT', 'SCHOOL', 'TARGET'],
+        ...filteredRecentActivity.value.map((row) => [
+            cleanExportValue(row.time, 'N/A'),
+            cleanExportValue(row.action, 'N/A'),
+            cleanExportValue(row.user_name, 'Unknown User'),
+            cleanExportValue(row.district, 'Unknown District'),
+            cleanExportValue(row.school_name, 'Unknown School'),
+            cleanExportValue(row.target, 'N/A'),
+        ]),
+    ];
+
+    const csvContent = `\uFEFF${csvRows.map((row) => toCsvLine(row)).join('\r\n')}`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = blobUrl;
+    link.download = `recent-activity-${now.toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+};
+
 const resetFilters = () => {
     filters.value = {
         district: 'all',
@@ -319,7 +360,14 @@ const resetFilters = () => {
     <Head title="Analytics" />
 
     <AdminLayout>
-        <div class="mb-6 flex justify-end">
+        <div class="mb-6 flex flex-wrap justify-end gap-2">
+            <button
+                type="button"
+                class="action-btn-primary"
+                @click="downloadFilteredCsv"
+            >
+                Download Recent Activity CSV
+            </button>
             <button
                 type="button"
                 class="action-btn-secondary"
