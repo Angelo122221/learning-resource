@@ -29,8 +29,16 @@ const fileForm = useForm({
 
 const showFolderModal = ref(false);
 const showFileModal = ref(false);
+const showUnlockWindowModal = ref(false);
 const uploadFileInput = ref(null);
 const previewImageInput = ref(null);
+const unlockWindowTarget = ref(null);
+
+const unlockWindowForm = useForm({
+    start_at: '',
+    duration_value: 1,
+    duration_unit: 'days',
+});
 
 const FILE_LIMIT_FALLBACK_BYTES = 10 * 1024 * 1024 * 1024;
 const PREVIEW_LIMIT_FALLBACK_BYTES = 5 * 1024 * 1024;
@@ -196,6 +204,105 @@ const toggleLock = (type, id) => {
 
     router.post(path, { _method: 'patch' }, { preserveScroll: true });
 };
+
+const toDateTimeLocalInput = (value) => {
+    if (!value) return '';
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    const pad = (part) => String(part).padStart(2, '0');
+    const year = parsed.getFullYear();
+    const month = pad(parsed.getMonth() + 1);
+    const day = pad(parsed.getDate());
+    const hour = pad(parsed.getHours());
+    const minute = pad(parsed.getMinutes());
+
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+};
+
+const toDisplayDateTime = (value) => {
+    if (!value) return '';
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    return parsed.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    });
+};
+
+const unlockWindowSummary = computed(() => {
+    if (!unlockWindowTarget.value?.unlock_starts_at || !unlockWindowTarget.value?.unlock_ends_at) {
+        return '';
+    }
+
+    return `${toDisplayDateTime(unlockWindowTarget.value.unlock_starts_at)} - ${toDisplayDateTime(unlockWindowTarget.value.unlock_ends_at)}`;
+});
+
+const openUnlockWindowModal = (type, item) => {
+    unlockWindowTarget.value = {
+        type,
+        id: item.id,
+        name: item.name ?? item.title ?? `Selected ${type}`,
+        unlock_starts_at: item.unlock_starts_at ?? null,
+        unlock_ends_at: item.unlock_ends_at ?? null,
+    };
+
+    unlockWindowForm.reset();
+    unlockWindowForm.clearErrors();
+    unlockWindowForm.duration_value = 1;
+    unlockWindowForm.duration_unit = 'days';
+    unlockWindowForm.start_at = toDateTimeLocalInput(item.unlock_starts_at) || toDateTimeLocalInput(new Date().toISOString());
+    showUnlockWindowModal.value = true;
+};
+
+const closeUnlockWindowModal = () => {
+    showUnlockWindowModal.value = false;
+    unlockWindowTarget.value = null;
+    unlockWindowForm.reset();
+    unlockWindowForm.clearErrors();
+};
+
+const unlockWindowPath = (target) => {
+    if (!target?.id || !target?.type) {
+        return null;
+    }
+
+    const base = target.type === 'folder' ? '/admin/folders' : '/admin/files';
+
+    return `${base}/${target.id}/unlock-window`;
+};
+
+const submitUnlockWindow = () => {
+    const path = unlockWindowPath(unlockWindowTarget.value);
+    if (!path) {
+        return;
+    }
+
+    unlockWindowForm.patch(path, {
+        preserveScroll: true,
+        onSuccess: () => closeUnlockWindowModal(),
+    });
+};
+
+const clearUnlockWindow = () => {
+    const path = unlockWindowPath(unlockWindowTarget.value);
+    if (!path) {
+        return;
+    }
+
+    router.patch(path, {
+        clear: true,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => closeUnlockWindowModal(),
+    });
+};
 </script>
 
 <template>
@@ -228,6 +335,7 @@ const toggleLock = (type, id) => {
                         @lock="toggleLock"
                         @add="openFolderModalWithParent"
                         @upload="openFileModalWithFolder"
+                        @schedule="openUnlockWindowModal"
                     />
                 </div>
             </div>
@@ -320,6 +428,83 @@ const toggleLock = (type, id) => {
                     <div class="flex flex-wrap justify-end gap-2">
                         <button type="button" class="action-btn-secondary" @click="closeFileModal">Cancel</button>
                         <button type="submit" class="action-btn-primary">Upload File</button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <Modal :show="showUnlockWindowModal" max-width="lg" @close="closeUnlockWindowModal">
+            <div class="p-5 md:p-6">
+                <h3 class="text-lg font-black text-slate-900">Timed Unlock Window</h3>
+                <p class="mt-1 text-sm font-medium text-slate-500">
+                    Keep this {{ unlockWindowTarget?.type || 'resource' }} locked by default but temporarily unlocked during the selected window.
+                </p>
+
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Selected Item</p>
+                    <p class="mt-1 text-sm font-black text-slate-900">{{ unlockWindowTarget?.name }}</p>
+                    <p v-if="unlockWindowSummary" class="mt-2 text-xs font-semibold text-blue-600">
+                        Existing window: {{ unlockWindowSummary }}
+                    </p>
+                </div>
+
+                <form @submit.prevent="submitUnlockWindow" class="mt-5 space-y-4">
+                    <div>
+                        <label class="field-label" for="unlock_start_at">Unlock Start</label>
+                        <input
+                            id="unlock_start_at"
+                            v-model="unlockWindowForm.start_at"
+                            type="datetime-local"
+                            class="field-input"
+                            required
+                        />
+                        <InputError :message="unlockWindowForm.errors.start_at" />
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                            <label class="field-label" for="unlock_duration_value">Duration Value</label>
+                            <input
+                                id="unlock_duration_value"
+                                v-model.number="unlockWindowForm.duration_value"
+                                type="number"
+                                min="1"
+                                max="365"
+                                class="field-input"
+                                required
+                            />
+                            <InputError :message="unlockWindowForm.errors.duration_value" />
+                        </div>
+
+                        <div>
+                            <label class="field-label" for="unlock_duration_unit">Duration Unit</label>
+                            <select id="unlock_duration_unit" v-model="unlockWindowForm.duration_unit" class="field-input" required>
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                                <option value="months">Months</option>
+                            </select>
+                            <InputError :message="unlockWindowForm.errors.duration_unit" />
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-between gap-2">
+                        <button
+                            type="button"
+                            class="action-btn-secondary"
+                            :disabled="!unlockWindowTarget?.unlock_starts_at || unlockWindowForm.processing"
+                            @click="clearUnlockWindow"
+                        >
+                            Clear Schedule
+                        </button>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="action-btn-secondary" @click="closeUnlockWindowModal">
+                                Cancel
+                            </button>
+                            <button type="submit" class="action-btn-primary" :disabled="unlockWindowForm.processing">
+                                Save Timed Unlock
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

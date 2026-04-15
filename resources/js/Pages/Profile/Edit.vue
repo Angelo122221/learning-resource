@@ -1,34 +1,68 @@
 <script setup>
 import AppFormSection from '@/Components/AppFormSection.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
-import DangerButton from '@/Components/DangerButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 
-defineProps({
+const props = defineProps({
     mustVerifyEmail: Boolean,
     status: String,
+    account: {
+        type: Object,
+        default: null,
+    },
 });
 
-const user = usePage().props.auth.user;
+const page = usePage();
+const user = computed(() => props.account ?? page.props.auth?.user ?? null);
+const isEditingProfile = ref(false);
+const isEditingPassword = ref(false);
+
+const displayAccount = computed(() => ({
+    name: user.value?.name || profileForm.name || '',
+    email: user.value?.email || profileForm.email || '',
+    district: user.value?.district || profileForm.district || '',
+    school_name: user.value?.school_name || profileForm.school_name || '',
+}));
 
 const profileForm = useForm({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: user.value?.name || '',
+    email: user.value?.email || '',
+    district: user.value?.district || '',
+    school_name: user.value?.school_name || '',
 });
+
+watch(user, (value) => {
+    if (!value) {
+        return;
+    }
+
+    if (!profileForm.name) {
+        profileForm.name = value.name || '';
+    }
+
+    if (!profileForm.email) {
+        profileForm.email = value.email || '';
+    }
+
+    if (!profileForm.district) {
+        profileForm.district = value.district || '';
+    }
+
+    if (!profileForm.school_name) {
+        profileForm.school_name = value.school_name || '';
+    }
+}, { immediate: true });
 
 const passwordForm = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
-});
-
-const deleteForm = useForm({
-    password: '',
 });
 
 const updateProfile = () => {
@@ -37,7 +71,11 @@ const updateProfile = () => {
             ...data,
             _method: 'patch',
         }))
-        .post(route('profile.update'));
+        .post(route('profile.update'), {
+            onSuccess: () => {
+                isEditingProfile.value = false;
+            },
+        });
 };
 
 const updatePassword = () => {
@@ -47,19 +85,11 @@ const updatePassword = () => {
             _method: 'put',
         }))
         .post(route('password.update'), {
-            onSuccess: () => passwordForm.reset(),
+            onSuccess: () => {
+                passwordForm.reset();
+                isEditingPassword.value = false;
+            },
         });
-};
-
-const deleteAccount = () => {
-    if (!confirm('Delete your account permanently?')) return;
-
-    deleteForm
-        .transform((data) => ({
-            ...data,
-            _method: 'delete',
-        }))
-        .post(route('profile.destroy'));
 };
 </script>
 
@@ -74,26 +104,79 @@ const deleteAccount = () => {
         />
 
         <div class="mx-auto max-w-5xl space-y-6">
-            <AppFormSection title="Update Profile" subtitle="Edit your core account details.">
-                <form @submit.prevent="updateProfile" class="space-y-5">
-                    <div>
-                        <InputLabel for="name" value="Name" />
-                        <TextInput id="name" v-model="profileForm.name" class="mt-1 block w-full" required autofocus />
-                        <InputError class="mt-2" :message="profileForm.errors.name" />
+            <AppFormSection title="Current Account Information" subtitle="Review your account details, then use Edit to update profile information.">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Name</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ displayAccount.name || '-' }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Email</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900 break-all">{{ displayAccount.email || '-' }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">District</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ displayAccount.district || '-' }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">School</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ displayAccount.school_name || '-' }}</p>
+                        </div>
                     </div>
 
-                    <div>
-                        <InputLabel for="email" value="Email" />
-                        <TextInput id="email" v-model="profileForm.email" type="email" class="mt-1 block w-full" required />
-                        <InputError class="mt-2" :message="profileForm.errors.email" />
+                    <button
+                        type="button"
+                        class="action-btn-secondary"
+                        @click="isEditingProfile = !isEditingProfile"
+                    >
+                        {{ isEditingProfile ? 'Cancel Edit' : 'Edit Information' }}
+                    </button>
+                </div>
+
+                <form v-if="isEditingProfile" @submit.prevent="updateProfile" class="mt-5 space-y-5 border-t border-slate-200 pt-5">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel for="name" value="Name" />
+                            <TextInput id="name" v-model="profileForm.name" class="mt-1 block w-full" required autofocus />
+                            <InputError class="mt-2" :message="profileForm.errors.name" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="email" value="Email" />
+                            <TextInput id="email" v-model="profileForm.email" type="email" class="mt-1 block w-full" required />
+                            <InputError class="mt-2" :message="profileForm.errors.email" />
+                        </div>
                     </div>
 
-                    <PrimaryButton :disabled="profileForm.processing">Save</PrimaryButton>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel for="district" value="District" />
+                            <TextInput id="district" v-model="profileForm.district" class="mt-1 block w-full" />
+                            <InputError class="mt-2" :message="profileForm.errors.district" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="school_name" value="School" />
+                            <TextInput id="school_name" v-model="profileForm.school_name" class="mt-1 block w-full" />
+                            <InputError class="mt-2" :message="profileForm.errors.school_name" />
+                        </div>
+                    </div>
+
+                    <PrimaryButton :disabled="profileForm.processing">Save Changes</PrimaryButton>
                 </form>
             </AppFormSection>
 
-            <AppFormSection title="Update Password" subtitle="Choose a strong password and keep your account secure.">
-                <form @submit.prevent="updatePassword" class="space-y-5">
+            <AppFormSection title="Password Security" subtitle="Use Change Password to update your account password.">
+                <button
+                    type="button"
+                    class="action-btn-secondary"
+                    @click="isEditingPassword = !isEditingPassword"
+                >
+                    {{ isEditingPassword ? 'Cancel Password Update' : 'Change Password' }}
+                </button>
+
+                <form v-if="isEditingPassword" @submit.prevent="updatePassword" class="mt-5 space-y-5 border-t border-slate-200 pt-5">
                     <div>
                         <InputLabel for="current_password" value="Current Password" />
                         <TextInput id="current_password" v-model="passwordForm.current_password" type="password" class="mt-1 block w-full" required />
@@ -110,19 +193,6 @@ const deleteAccount = () => {
                         <InputError class="mt-2" :message="passwordForm.errors.password_confirmation" />
                     </div>
                     <PrimaryButton :disabled="passwordForm.processing">Update Password</PrimaryButton>
-                </form>
-            </AppFormSection>
-
-            <AppFormSection title="Delete Account" subtitle="This action is permanent and cannot be undone.">
-                <form @submit.prevent="deleteAccount" class="space-y-5">
-                    <div>
-                        <InputLabel for="delete_password" value="Password" />
-                        <TextInput id="delete_password" v-model="deleteForm.password" type="password" class="mt-1 block w-full" required />
-                        <InputError class="mt-2" :message="deleteForm.errors.password" />
-                    </div>
-                    <DangerButton type="submit">
-                        Delete Account
-                    </DangerButton>
                 </form>
             </AppFormSection>
         </div>

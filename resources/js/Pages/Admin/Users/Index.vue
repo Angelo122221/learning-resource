@@ -118,7 +118,6 @@ const deleteUser = (userId) => {
 
     <AdminLayout>
         <AppPageHeader
-            badge="UM"
             title="User"
             accent="Management"
             subtitle="Create, edit, secure, and organize DepEd accounts from one workspace."

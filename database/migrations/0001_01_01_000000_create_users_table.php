@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('password');
             // Added is_admin here to identify administrators
             $table->boolean('is_admin')->default(false);
+            $table->string('role')->default('teacher');
+            $table->string('district')->nullable();
+            $table->string('school_name')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

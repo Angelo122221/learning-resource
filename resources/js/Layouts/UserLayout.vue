@@ -405,6 +405,12 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <Link
+                            href="/profile"
+                            class="rounded-full border border-white/45 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-[#183f95] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#f28c28]"
+                        >
+                            Teacher Profile
+                        </Link>
                         <Link href="/logout" method="post" as="button" class="rounded-full border border-white/45 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-[#183f95] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#f28c28]">
                             Log Out
                         </Link>
@@ -446,6 +452,13 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div v-if="showingNavigationDropdown" id="mobile-primary-navigation" class="space-y-3 lg:hidden">
+                        <Link
+                            href="/profile"
+                            class="inline-flex w-fit items-center rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white transition hover:bg-white hover:text-[#183f95] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#214dc1]"
+                        >
+                            Teacher Profile
+                        </Link>
+
                         <div
                             v-if="user"
                             class="rounded-[1.25rem] border border-white/18 bg-white/8 px-4 py-4 backdrop-blur"

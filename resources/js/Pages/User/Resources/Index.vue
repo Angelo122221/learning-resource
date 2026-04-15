@@ -235,8 +235,17 @@ const toggleResourceCategories = async () => {
         return;
     }
 
+    await measureResourceCategories();
+    await new Promise((resolve) => {
+        if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+            resolve();
+            return;
+        }
+
+        window.requestAnimationFrame(() => resolve());
+    });
+
     isResourceCategoriesExpanded.value = true;
-    void measureResourceCategories();
 };
 
 const observeResourceCategoriesGrid = (grid, previousGrid = null) => {
@@ -1101,7 +1110,7 @@ watch(
 
             <div v-else>
                 <div
-                    class="relative overflow-hidden transition-[max-height] duration-500 ease-in-out"
+                    class="resource-categories-panel relative overflow-hidden"
                     :style="resourceCategoriesContainerStyle"
                 >
                     <div ref="resourceCategoriesGrid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1374,6 +1383,18 @@ watch(
 
 .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
+}
+
+.resource-categories-panel {
+    transform: translateZ(0);
+    will-change: max-height;
+    transition: max-height 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .resource-categories-panel {
+        transition-duration: 1ms;
+    }
 }
 
 .announcement-content-shell {

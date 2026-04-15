@@ -60,11 +60,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/folders', [AdminResourceController::class, 'storeFolder'])->name('admin.folders.store');
         Route::delete('/folders/{folder}', [AdminResourceController::class, 'destroyFolder'])->name('admin.folders.destroy');
         Route::patch('/folders/{folder}/toggle-lock', [AdminResourceController::class, 'toggleFolderLock'])->name('admin.folders.toggle-lock');
+        Route::patch('/folders/{folder}/unlock-window', [AdminResourceController::class, 'setFolderUnlockWindow'])->name('admin.folders.unlock-window');
 
         // File Management
         Route::post('/files', [AdminResourceController::class, 'storeFile'])->name('admin.files.store');
         Route::delete('/files/{file}', [AdminResourceController::class, 'destroyFile'])->name('admin.files.destroy');
         Route::patch('/files/{file}/toggle-lock', [AdminResourceController::class, 'toggleFileLock'])->name('admin.files.toggle-lock');
+        Route::patch('/files/{file}/unlock-window', [AdminResourceController::class, 'setFileUnlockWindow'])->name('admin.files.unlock-window');
 
         // Portal Content Management (NEW!)
         Route::post('/carousel', [AdminResourceController::class, 'storeCarousel'])->name('admin.carousel.store');

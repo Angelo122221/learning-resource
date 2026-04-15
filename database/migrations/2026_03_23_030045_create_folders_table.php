@@ -17,6 +17,7 @@ return new class extends Migration
 
             // The display name of the folder
             $table->string('name');
+            $table->boolean('is_locked')->default(false);
 
             // The Parent ID allows a folder to live inside another folder.
             // constrained('folders') ensures the parent actually exists.

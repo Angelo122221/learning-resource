@@ -10,9 +10,35 @@ defineProps({
     folder: Object,
 });
 
-defineEmits(['delete', 'lock', 'add', 'upload']);
+defineEmits(['delete', 'lock', 'add', 'upload', 'schedule']);
 
 const isOpen = ref(false);
+
+const hasUnlockWindow = (item) => Boolean(item?.unlock_starts_at && item?.unlock_ends_at);
+const isEffectivelyLocked = (item) => Boolean(item?.is_effectively_locked ?? item?.is_locked);
+
+const toDateTimeLabel = (value) => {
+    if (!value) return '';
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    return parsed.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    });
+};
+
+const unlockWindowLabel = (item) => {
+    if (!hasUnlockWindow(item)) {
+        return '';
+    }
+
+    return `${toDateTimeLabel(item.unlock_starts_at)} - ${toDateTimeLabel(item.unlock_ends_at)}`;
+};
 </script>
 
 <template>
@@ -29,10 +55,14 @@ const isOpen = ref(false);
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-base font-black uppercase tracking-tight text-slate-900">{{ folder.name }}</span>
-                        <AppStatusBadge v-if="folder.is_locked" label="Locked" variant="locked" />
+                        <AppStatusBadge v-if="isEffectivelyLocked(folder)" label="Locked" variant="locked" />
+                        <AppStatusBadge v-if="folder.is_temporarily_unlocked" label="Temporarily Open" variant="success" />
                     </div>
                     <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                         {{ folder.children_recursive?.length || 0 }} subfolders / {{ folder.files?.length || 0 }} files
+                    </p>
+                    <p v-if="hasUnlockWindow(folder)" class="mt-1 text-[11px] font-semibold text-blue-600">
+                        Unlock window: {{ unlockWindowLabel(folder) }}
                     </p>
                 </div>
             </div>
@@ -55,6 +85,15 @@ const isOpen = ref(false);
                     @click="$emit('upload', folder.id)"
                 >
                     ⤴
+                </button>
+                <button
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    :title="hasUnlockWindow(folder) ? 'Edit timed unlock window' : 'Set timed unlock window'"
+                    :aria-label="hasUnlockWindow(folder) ? 'Edit timed unlock window' : 'Set timed unlock window'"
+                    @click="$emit('schedule', 'folder', folder)"
+                >
+                    ⏱
                 </button>
                 <button
                     type="button"
@@ -87,6 +126,7 @@ const isOpen = ref(false);
                 @lock="(type, id) => $emit('lock', type, id)"
                 @add="(id) => $emit('add', id)"
                 @upload="(id) => $emit('upload', id)"
+                @schedule="(type, item) => $emit('schedule', type, item)"
             />
 
             <div
@@ -99,17 +139,30 @@ const isOpen = ref(false);
                         {{ file.file_type === 'pdf' ? 'PDF' : 'FILE' }}
                     </span>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-black text-slate-800" :class="{ 'line-through text-slate-400': file.is_locked }">
+                        <p class="truncate text-sm font-black text-slate-800" :class="{ 'line-through text-slate-400': isEffectivelyLocked(file) }">
                             {{ file.title }}
                         </p>
                         <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                             {{ file.file_type }}
                         </p>
+                        <p v-if="hasUnlockWindow(file)" class="mt-1 text-[11px] font-semibold text-blue-600">
+                            Unlock window: {{ unlockWindowLabel(file) }}
+                        </p>
                     </div>
-                    <AppStatusBadge v-if="file.is_locked" label="Locked" variant="locked" />
+                    <AppStatusBadge v-if="isEffectivelyLocked(file)" label="Locked" variant="locked" />
+                    <AppStatusBadge v-if="file.is_temporarily_unlocked" label="Temporarily Open" variant="success" />
                 </div>
 
                 <div class="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        :title="hasUnlockWindow(file) ? 'Edit timed unlock window' : 'Set timed unlock window'"
+                        :aria-label="hasUnlockWindow(file) ? 'Edit timed unlock window' : 'Set timed unlock window'"
+                        @click="$emit('schedule', 'file', file)"
+                    >
+                        ⏱
+                    </button>
                     <button
                         type="button"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"

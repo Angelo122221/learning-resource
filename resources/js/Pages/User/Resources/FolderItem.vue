@@ -31,6 +31,10 @@ const cardTone = computed(() => {
     return palette[id % palette.length];
 });
 
+const folderLocked = computed(() => Boolean(props.folder?.is_effectively_locked ?? props.folder?.is_locked));
+const isFileLocked = (file) => Boolean(file?.is_effectively_locked ?? file?.is_locked);
+const isTemporarilyUnlocked = (item) => Boolean(item?.is_temporarily_unlocked);
+
 const trackFolderOpen = async () => {
     try {
         await axios.post(`/resources/folders/${props.folder.id}/open`);
@@ -40,7 +44,7 @@ const trackFolderOpen = async () => {
 };
 
 const handleFolderAction = () => {
-    if (props.folder.is_locked) return;
+    if (folderLocked.value) return;
 
     if (props.isRoot) {
         showModal.value = true;
@@ -66,14 +70,15 @@ const closeModal = () => {
         <button
             type="button"
             class="group relative flex h-full w-full flex-col overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white text-left transition-all"
-            :class="folder.is_locked ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-0.5 hover:border-slate-400'"
+            :class="folderLocked ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-0.5 hover:border-slate-400'"
             @click="handleFolderAction"
         >
             <div class="relative overflow-hidden">
                 <div class="h-36 bg-gradient-to-br" :class="cardTone" />
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_25%),linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.42))]" />
-                <div v-if="folder.is_locked" class="absolute right-0 top-0 p-3.5">
-                    <AppStatusBadge v-if="folder.is_locked" label="Locked" variant="locked" />
+                <div v-if="folderLocked || isTemporarilyUnlocked(folder)" class="absolute right-0 top-0 p-3.5">
+                    <AppStatusBadge v-if="folderLocked" label="Locked" variant="locked" />
+                    <AppStatusBadge v-else-if="isTemporarilyUnlocked(folder)" label="Open Now" variant="success" />
                 </div>
                 <div class="absolute inset-x-0 bottom-0 p-3.5 text-white">
                     <p class="line-clamp-2 text-lg font-black uppercase tracking-tight">{{ folder.name }}</p>
@@ -85,7 +90,7 @@ const closeModal = () => {
 
             <div class="flex items-center justify-between gap-3 px-3.5 py-3.5">
                 <div>
-                    <p v-if="folder.is_locked" class="text-xs font-black uppercase tracking-[0.18em] text-red-400">
+                    <p v-if="folderLocked" class="text-xs font-black uppercase tracking-[0.18em] text-red-400">
                         Access restricted
                     </p>
                     <p v-else class="text-xs font-medium text-slate-500">
@@ -94,9 +99,9 @@ const closeModal = () => {
                 </div>
                 <span
                     class="inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]"
-                    :class="folder.is_locked ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white'"
+                    :class="folderLocked ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white'"
                 >
-                    {{ folder.is_locked ? 'Locked' : 'Open Resources' }}
+                    {{ folderLocked ? 'Locked' : 'Open Resources' }}
                 </span>
             </div>
         </button>
@@ -138,19 +143,20 @@ const closeModal = () => {
                                     v-for="file in folder.files"
                                     :key="file.id"
                                     class="panel-muted flex items-center justify-between gap-4 border p-5"
-                                    :class="file.is_locked ? 'opacity-60' : 'hover:border-blue-300'"
+                                    :class="isFileLocked(file) ? 'opacity-60' : 'hover:border-blue-300'"
                                 >
                                     <div class="flex min-w-0 items-center gap-4 overflow-hidden">
                                         <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-[11px] font-black uppercase tracking-[0.18em] text-white">
                                             {{ file.file_type === 'pdf' ? 'PDF' : 'FILE' }}
                                         </span>
-                                        <span class="truncate text-base font-bold text-slate-700" :class="{ 'line-through text-slate-400': file.is_locked }">
+                                        <span class="truncate text-base font-bold text-slate-700" :class="{ 'line-through text-slate-400': isFileLocked(file) }">
                                             {{ file.title }}
                                         </span>
                                     </div>
 
                                     <div class="flex shrink-0 items-center gap-2">
-                                        <span v-if="file.is_locked" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Locked</span>
+                                        <span v-if="isFileLocked(file)" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Locked</span>
+                                        <span v-else-if="isTemporarilyUnlocked(file)" class="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">Open Now</span>
                                         <template v-else>
                                             <a :href="`/resources/preview/${file.id}`" target="_blank" class="action-btn-secondary">Preview</a>
                                             <a :href="`/resources/download/${file.id}`" target="_blank" class="action-btn-primary">Download</a>
@@ -173,7 +179,7 @@ const closeModal = () => {
         <button
             type="button"
             class="panel-muted flex w-full items-center justify-between border p-5 text-left transition-all"
-            :class="folder.is_locked ? 'cursor-not-allowed opacity-60' : 'hover:border-blue-300'"
+            :class="folderLocked ? 'cursor-not-allowed opacity-60' : 'hover:border-blue-300'"
             @click="handleFolderAction"
         >
             <div class="flex items-center gap-5">
@@ -183,35 +189,37 @@ const closeModal = () => {
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-lg font-black uppercase tracking-tight text-slate-900">{{ folder.name }}</span>
-                        <AppStatusBadge v-if="folder.is_locked" label="Locked" variant="locked" />
+                        <AppStatusBadge v-if="folderLocked" label="Locked" variant="locked" />
+                        <AppStatusBadge v-else-if="isTemporarilyUnlocked(folder)" label="Open Now" variant="success" />
                     </div>
-                    <span v-if="!folder.is_locked" class="mt-1 block text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                    <span v-if="!folderLocked" class="mt-1 block text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                         {{ folder.children_recursive?.length || 0 }} folders / {{ folder.files?.length || 0 }} files
                     </span>
                 </div>
             </div>
         </button>
 
-        <div v-if="isOpen && !folder.is_locked" class="mt-3 space-y-3 border-l-4 border-slate-200 pl-5 md:ml-6 md:pl-6">
+        <div v-if="isOpen && !folderLocked" class="mt-3 space-y-3 border-l-4 border-slate-200 pl-5 md:ml-6 md:pl-6">
             <UserFolderItem v-for="sub in folder.children_recursive" :key="sub.id" :folder="sub" :is-root="false" />
 
             <div
                 v-for="file in folder.files"
                 :key="file.id"
                 class="panel-muted flex items-center justify-between gap-4 border p-4"
-                :class="file.is_locked ? 'opacity-60' : 'hover:border-blue-200'"
+                :class="isFileLocked(file) ? 'opacity-60' : 'hover:border-blue-200'"
             >
                 <div class="flex min-w-0 items-center gap-4">
                     <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-[11px] font-black uppercase tracking-[0.18em] text-white">
                         {{ file.file_type === 'pdf' ? 'PDF' : 'FILE' }}
                     </span>
-                    <span class="truncate text-sm font-bold text-slate-700" :class="{ 'line-through text-slate-400': file.is_locked }">
+                    <span class="truncate text-sm font-bold text-slate-700" :class="{ 'line-through text-slate-400': isFileLocked(file) }">
                         {{ file.title }}
                     </span>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span v-if="file.is_locked" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Locked</span>
+                    <span v-if="isFileLocked(file)" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Locked</span>
+                    <span v-else-if="isTemporarilyUnlocked(file)" class="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">Open Now</span>
                     <template v-else>
                         <a :href="`/resources/preview/${file.id}`" target="_blank" class="action-btn-secondary">Preview</a>
                         <a :href="`/resources/download/${file.id}`" target="_blank" class="action-btn-primary">Download</a>

@@ -88,7 +88,7 @@ class ResourceController extends Controller
 
     public function openFolder(Folder $folder): HttpResponse
     {
-        if ($folder->is_locked) {
+        if ($folder->isCurrentlyLocked()) {
             abort(403, 'This folder is currently locked.');
         }
 
@@ -99,7 +99,11 @@ class ResourceController extends Controller
 
     public function download(ResourceFile $file): BinaryFileResponse
     {
-        if ($file->is_locked) {
+        if ($file->folder?->isCurrentlyLocked()) {
+            abort(403, 'The parent folder is currently locked.');
+        }
+
+        if ($file->isCurrentlyLocked()) {
             abort(403, 'This file is currently locked and cannot be downloaded.');
         }
 
@@ -113,7 +117,11 @@ class ResourceController extends Controller
 
     public function preview(ResourceFile $file): BinaryFileResponse
     {
-        if ($file->is_locked) {
+        if ($file->folder?->isCurrentlyLocked()) {
+            abort(403, 'The parent folder is currently locked.');
+        }
+
+        if ($file->isCurrentlyLocked()) {
             abort(403, 'This file is currently locked and cannot be previewed.');
         }
 

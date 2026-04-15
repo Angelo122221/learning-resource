@@ -12,6 +12,7 @@ use App\Models\ResourceTracking;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -292,16 +293,42 @@ class ResourceController extends Controller
 
     public function toggleFolderLock(Folder $folder): RedirectResponse
     {
-        $folder->update(['is_locked' => ! $folder->is_locked]);
+        $unlocking = $folder->is_locked;
+
+        $folder->update([
+            'is_locked' => ! $folder->is_locked,
+            'unlock_starts_at' => $unlocking ? null : $folder->unlock_starts_at,
+            'unlock_ends_at' => $unlocking ? null : $folder->unlock_ends_at,
+        ]);
 
         return back(303);
     }
 
     public function toggleFileLock(ResourceFile $file): RedirectResponse
     {
-        $file->update(['is_locked' => ! $file->is_locked]);
+        $unlocking = $file->is_locked;
+
+        $file->update([
+            'is_locked' => ! $file->is_locked,
+            'unlock_starts_at' => $unlocking ? null : $file->unlock_starts_at,
+            'unlock_ends_at' => $unlocking ? null : $file->unlock_ends_at,
+        ]);
 
         return back(303);
+    }
+
+    public function setFolderUnlockWindow(Request $request, Folder $folder): RedirectResponse
+    {
+        $message = $this->applyUnlockWindow($request, $folder, 'folder');
+
+        return back(303)->with('success', $message);
+    }
+
+    public function setFileUnlockWindow(Request $request, ResourceFile $file): RedirectResponse
+    {
+        $message = $this->applyUnlockWindow($request, $file, 'file');
+
+        return back(303)->with('success', $message);
     }
 
     public function storeCarousel(Request $request): RedirectResponse
@@ -649,6 +676,43 @@ class ResourceController extends Controller
             'max:255',
             'regex:/@deped\.gov\.ph$/i',
         ];
+    }
+
+    private function applyUnlockWindow(Request $request, Folder|ResourceFile $resource, string $type): string
+    {
+        if ($request->boolean('clear')) {
+            $resource->update([
+                'unlock_starts_at' => null,
+                'unlock_ends_at' => null,
+            ]);
+
+            return ucfirst($type).' unlock schedule cleared.';
+        }
+
+        $validated = $request->validate([
+            'start_at' => ['required', 'date'],
+            'duration_value' => ['required', 'integer', 'min:1', 'max:365'],
+            'duration_unit' => ['required', Rule::in(['days', 'weeks', 'months'])],
+        ]);
+
+        $startAt = Carbon::parse($validated['start_at']);
+        $durationValue = (int) $validated['duration_value'];
+        $durationUnit = $validated['duration_unit'];
+
+        $endAt = match ($durationUnit) {
+            'days' => $startAt->copy()->addDays($durationValue),
+            'weeks' => $startAt->copy()->addWeeks($durationValue),
+            'months' => $startAt->copy()->addMonths($durationValue),
+            default => $startAt->copy()->addDays($durationValue),
+        };
+
+        $resource->update([
+            'is_locked' => true,
+            'unlock_starts_at' => $startAt,
+            'unlock_ends_at' => $endAt,
+        ]);
+
+        return ucfirst($type).' unlock schedule saved.';
     }
 
     private function readableAction(string $action): string

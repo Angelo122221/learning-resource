@@ -116,7 +116,7 @@ const submit = () => {
                                     :href="route('password.request')"
                                     class="text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-blue-600"
                                 >
-                                    Forgot password?
+                                    Forgot Password?
                                 </Link>
                             </div>
 
