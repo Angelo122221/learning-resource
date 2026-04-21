@@ -56,3 +56,13 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Supabase 
+password = Keith@ngelo22085119
+project url = https://pccbgazvvkzncqwjbgkx.supabase.co
+publishavle key = sb_publishable_9_qClRqqo8bjRHUiDJ0bKg_gsm8Lbin
+direct connection string = postgresql://postgres:[Keith@ngelo22085119]@db.pccbgazvvkzncqwjbgkx.supabase.co:5432/postgres
+
+supabase login
+supabase init
+supabase link --project-ref pccbgazvvkzncqwjbgkx
