@@ -13,17 +13,20 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@deped.gov.ph'],
-            [
-                'name' => 'System Admin',
-                'password' => Hash::make('admin12345'),
-                'is_admin' => true,
-                'role' => 'admin',
-                'district' => 'Division Office',
-                'school_name' => 'DepEd Central Office',
-                'email_verified_at' => now(),
-            ]
-        );
+        $admin = User::firstOrNew(['email' => 'admin@deped.gov.ph']);
+
+        $admin->name = 'System Admin';
+        $admin->is_admin = true;
+        $admin->role = 'admin';
+        $admin->district = 'Division Office';
+        $admin->school_name = 'DepEd Central Office';
+        $admin->email_verified_at = $admin->email_verified_at ?? now();
+
+        // Keep admin login stable on first seed while avoiding password resets on re-seed.
+        if (! $admin->exists) {
+            $admin->password = Hash::make('admin12345');
+        }
+
+        $admin->save();
     }
 }
