@@ -28,4 +28,24 @@ if (! is_string($appKey) || trim($appKey) === '') {
     return;
 }
 
+$normalizedAppKey = trim(trim($appKey), "\"'");
+$rawKey = str_starts_with($normalizedAppKey, 'base64:')
+    ? base64_decode(substr($normalizedAppKey, 7), true)
+    : $normalizedAppKey;
+
+if (! is_string($rawKey) || strlen($rawKey) !== 32) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Runtime bootstrap failed: APP_KEY is invalid. Use `php artisan key:generate --show` and set the exact output in Vercel.';
+    return;
+}
+
+$viteManifestPath = __DIR__.'/../public/build/manifest.json';
+if (! file_exists($viteManifestPath)) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Runtime bootstrap failed: Vite build manifest is missing at public/build/manifest.json.';
+    return;
+}
+
 require __DIR__.'/../public/index.php';
